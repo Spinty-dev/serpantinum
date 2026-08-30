@@ -143,6 +143,9 @@ if [ "$COMMAND" == "start" ]; then
     bash "$SERPANTINUM_DIR/scripts/first_launch.sh" &
     CHILD_PIDS+=($!)
 
+    bash "$SERPANTINUM_DIR/scripts/autostart.sh" &
+    CHILD_PIDS+=($!)
+
     quickshell -p "$MAIN_QML" &
     QS_PID=$!
     CHILD_PIDS+=($QS_PID)

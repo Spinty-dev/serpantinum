@@ -26,6 +26,7 @@
     "tabs": {
       "welcome": "Welcome",
       "general": "General",
+      "autostart": "Autostart",
       "display": "Display",
       "bar": "Bar",
       "launcher": "Launcher",
@@ -36,6 +37,49 @@
       "tutorial": "Tutorial",
       "update": "Update",
       "about": "About"
+    },
+    "autostart": {
+      "title": "Autostart",
+      "desc": "Manage programs, binaries, and scripts launched automatically upon session start",
+      "master_switch": {
+        "title": "Enable Autostart",
+        "desc": "Globally execute the configured startup application list on login"
+      },
+      "add_button": "Add Application",
+      "empty_title": "No autostart applications",
+      "empty_desc": "Click 'Add Application' to specify commands, binaries, delays, and repetition counts.",
+      "name_label": "Name",
+      "name_placeholder": "e.g. Discord, EasyEffects, Script",
+      "exec_label": "Executable Command",
+      "exec_placeholder": "Binary path or name with flags (e.g. discord --start-minimized)",
+      "browse_file": "Browse File",
+      "delay_label": "Startup Delay",
+      "delay_desc": "Time in seconds to wait before launching",
+      "delay_unit": "s",
+      "count_label": "Launch Count",
+      "count_desc": "Number of instances to execute upon startup",
+      "repeat_delay_label": "Repeat Interval",
+      "repeat_delay_desc": "Delay between repeated executions",
+      "workspace_label": "Workspace",
+      "workspace_default": "Default",
+      "silent_label": "Silent Launch",
+      "silent_desc": "Do not steal focus when window opens",
+      "condition_label": "Launch Condition",
+      "condition_always": "Always",
+      "condition_ac_only": "AC Power Only",
+      "condition_battery_only": "Battery Only",
+      "condition_multi_monitor": "Multi-Monitor Only",
+      "restart_crash_label": "Keep-Alive / Watchdog",
+      "restart_crash_desc": "Automatically respawn process if it crashes",
+      "status_running": "Running",
+      "status_success": "Success",
+      "status_failed": "Failed",
+      "status_idle": "Idle",
+      "view_log": "Log",
+      "no_log": "Log is currently empty",
+      "run_now": "Run Now",
+      "delete": "Delete",
+      "toggle": "Enable / Disable"
     },
     "launcher": {
       "position": {
@@ -891,7 +935,8 @@
       "current_focus": "Monitor and log active window focus changes",
       "monitors_detect": "Query active display outputs and refresh rates",
       "location_manual": "Set geographic coordinates and timezone manually",
-      "blue_light_filter": "Adjust color temperature and automatic day/night schedule"
+      "blue_light_filter": "Adjust color temperature and automatic day/night schedule",
+      "autostart": "Execute user-configured autostart applications and services"
     }
   },
   "daemon": {

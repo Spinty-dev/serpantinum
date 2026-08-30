@@ -26,6 +26,7 @@
     "tabs": {
       "welcome": "Bienvenida",
       "general": "General",
+      "autostart": "Inicio automático",
       "display": "Pantalla",
       "bar": "Barra",
       "launcher": "Lanzador",
@@ -36,6 +37,49 @@
       "tutorial": "Tutorial",
       "update": "Actualizaciones",
       "about": "Acerca de"
+    },
+    "autostart": {
+      "title": "Inicio automático",
+      "desc": "Administrar programas, binarios y scripts que se inician automáticamente al iniciar la sesión",
+      "master_switch": {
+        "title": "Habilitar inicio automático",
+        "desc": "Ejecutar globalmente la lista de aplicaciones de inicio configuradas al iniciar sesión"
+      },
+      "add_button": "Añadir aplicación",
+      "empty_title": "Sin aplicaciones de inicio",
+      "empty_desc": "Haga clic en 'Añadir aplicación' para especificar comandos, binarios, retrasos y recuentos de repetición.",
+      "name_label": "Nombre",
+      "name_placeholder": "p. ej., Discord, EasyEffects, Script",
+      "exec_label": "Comando ejecutable",
+      "exec_placeholder": "Ruta al binario o nombre con flags (p. ej., discord --start-minimized)",
+      "browse_file": "Explorar archivo",
+      "delay_label": "Retraso de inicio",
+      "delay_desc": "Tiempo de espera en segundos antes de iniciar",
+      "delay_unit": "s",
+      "count_label": "Número de ejecuciones",
+      "count_desc": "Número de instancias a ejecutar al inicio",
+      "repeat_delay_label": "Intervalo de repetición",
+      "repeat_delay_desc": "Retraso entre ejecuciones repetidas",
+      "workspace_label": "Espacio de trabajo (Workspace)",
+      "workspace_default": "Predeterminado",
+      "silent_label": "Inicio silencioso (Silent)",
+      "silent_desc": "Abrir ventana en segundo plano sin robar el foco",
+      "condition_label": "Condición de inicio",
+      "condition_always": "Siempre",
+      "condition_ac_only": "Solo con corriente (AC)",
+      "condition_battery_only": "Solo con batería",
+      "condition_multi_monitor": "Solo con múltiples monitores",
+      "restart_crash_label": "Reinicio tras fallo (Keep-Alive)",
+      "restart_crash_desc": "Reiniciar servicio automáticamente en caso de error",
+      "status_running": "En ejecución",
+      "status_success": "Completado",
+      "status_failed": "Error",
+      "status_idle": "Inactivo",
+      "view_log": "Registro",
+      "no_log": "El registro está vacío",
+      "run_now": "Ejecutar ahora",
+      "delete": "Eliminar",
+      "toggle": "Activar / Desactivar"
     },
     "launcher": {
       "position": {
@@ -891,7 +935,8 @@
       "current_focus": "Monitorear y registrar cambios de enfoque de la ventana activa",
       "monitors_detect": "Consultar salidas de pantalla activas y frecuencias de actualización",
       "location_manual": "Establecer coordenadas geográficas y zona horaria manualmente",
-      "blue_light_filter": "Ajustar la temperatura de color y el horario automático día/noche"
+      "blue_light_filter": "Ajustar la temperatura de color y el horario automático día/noche",
+      "autostart": "Ejecutar aplicaciones y servicios de inicio configurados por el usuario"
     }
   },
   "daemon": {

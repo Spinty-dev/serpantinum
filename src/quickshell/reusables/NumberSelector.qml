@@ -17,6 +17,7 @@ Item {
 
     property string prefix: ""
     property string suffix: ""
+    property string specialZeroText: ""
 
     property color baseColor: "#313244"
     property color accentColor: "#89b4fa"
@@ -70,6 +71,9 @@ Item {
     }
 
     function formatValue(v) {
+        if (root.specialZeroText !== "" && Math.abs(v) < 0.00001) {
+            return root.specialZeroText;
+        }
         let fixed = root.decimals > 0 ? v.toFixed(root.decimals) : Math.round(v).toString();
         return root.prefix + fixed + root.suffix;
     }
@@ -503,7 +507,7 @@ Item {
                     }
                     while (wheelAccumulator <= -threshold) {
                         root.stepDown();
-                        wheelAccumulator -= threshold;
+                        wheelAccumulator += threshold;
                     }
                 }
             }

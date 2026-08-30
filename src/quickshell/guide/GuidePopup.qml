@@ -138,6 +138,7 @@ Item {
         { id: "Notifications", key: "notifications", name: "Notifications", icon: "󰂚", file: "notifications/NotificationsTab.qml" },
         { id: "Idle", key: "idle", name: "Idle", icon: "󰒲", file: "IdleTab.qml" },
         { id: "Wellbeing", key: "wellbeing", name: "Wellbeing", icon: "󰄉", file: "wellbeing/DigitalWellbeingTab.qml" },
+        { id: "Autostart", key: "autostart", name: "Autostart", icon: "󰐥", file: "AutostartTab.qml" },
         { id: "About", key: "about", name: "About", icon: "", file: "AboutTab.qml" }
     ]
 
