@@ -59,9 +59,9 @@
         "desc": "Prefijo de comando usado para ejecuciones con > (ej. kitty -e, alacritty -e, foot -e)"
       },
       "smart_ranking": {
-	"title": "Ordenación inteligente de elementos en el lanzador",
-	"desc": "Ordenar aplicaciones según su uso y el tiempo que se pasa en ellas"
-      },			
+        "title": "Ordenación inteligente de elementos en el lanzador",
+        "desc": "Ordenar aplicaciones según su uso y el tiempo que se pasa en ellas"
+      },
       "test": "Abrir lanzador"
     },
     "notifications": {
@@ -833,7 +833,7 @@
       "round": "Redondo",
       "compact": "Compacto",
       "rect": "Rectangular",
-      "minimal": "Minimalista",			
+      "minimal": "Minimalista",
       "rounded": "Redondeado"
     }
   },
@@ -891,7 +891,8 @@
       "current_focus": "Monitorear y registrar cambios de enfoque de la ventana activa",
       "monitors_detect": "Consultar salidas de pantalla activas y frecuencias de actualización",
       "location_manual": "Establecer coordenadas geográficas y zona horaria manualmente",
-      "blue_light_filter": "Ajustar la temperatura de color y el horario automático día/noche"
+      "blue_light_filter": "Ajustar la temperatura de color y el horario automático día/noche",
+      "translate": "Traducción instantánea de texto y selecciones"
     }
   },
   "daemon": {
@@ -1001,5 +1002,18 @@
       "disabling_dm": "-> Deshabilitando gestor de pantalla en conflicto: {dm}",
       "sddm_success": "-> Tema Material You para SDDM instalado y servicio habilitado [ OK ]"
     }
+  },
+  "translator": {
+    "title": "Traductor",
+    "status_translating": "Traduciendo...",
+    "speed": "Velocidad: ",
+    "detected": "Detectado: ",
+    "input_label": "Texto original",
+    "placeholder": "Escribe, pega o dicta texto aquí...",
+    "chars": "caracteres",
+    "translation_label": "Traducción",
+    "empty_prompt": "La traducción aparecerá aquí al instante...",
+    "recent": "Recientes:",
+    "failed": "Traducción no disponible"
   }
 }

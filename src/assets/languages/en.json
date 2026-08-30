@@ -59,9 +59,9 @@
         "desc": "Command prefix used for > executions (e.g. kitty -e, alacritty -e, foot -e)"
       },
       "smart_ranking": {
-	"title": "Smart sorting of items in launcher",
-	"desc": "Sort apps based on usage and amount of time spent in them"			
-      },			
+        "title": "Smart sorting of items in launcher",
+        "desc": "Sort apps based on usage and amount of time spent in them"
+      },
       "test": "Open launcher"
     },
     "notifications": {
@@ -830,7 +830,7 @@
       "digital": "Digital",
       "analog": "Analog",
       "full": "Full",
-      "minimal": "Minimal",			
+      "minimal": "Minimal",
       "round": "Round",
       "compact": "Compact",
       "rect": "Rect",
@@ -891,7 +891,8 @@
       "current_focus": "Monitor and log active window focus changes",
       "monitors_detect": "Query active display outputs and refresh rates",
       "location_manual": "Set geographic coordinates and timezone manually",
-      "blue_light_filter": "Adjust color temperature and automatic day/night schedule"
+      "blue_light_filter": "Adjust color temperature and automatic day/night schedule",
+      "translate": "Instant text and selection translator"
     }
   },
   "daemon": {
@@ -1001,5 +1002,18 @@
       "disabling_dm": "-> Disabling conflicting display manager: {dm}",
       "sddm_success": "-> SDDM Material You theme installed and service enabled [ OK ]"
     }
+  },
+  "translator": {
+    "title": "Translator",
+    "status_translating": "Translating...",
+    "speed": "Speed: ",
+    "detected": "Detected: ",
+    "input_label": "Source Text",
+    "placeholder": "Type, paste, or speak text here...",
+    "chars": "chars",
+    "translation_label": "Translation",
+    "empty_prompt": "Translation will appear here instantly...",
+    "recent": "Recent:",
+    "failed": "No translation available"
   }
 }

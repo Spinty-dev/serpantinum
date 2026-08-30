@@ -59,9 +59,9 @@
         "desc": "Befehlspräfix für > Ausführungen (z. B. kitty -e, alacritty -e, foot -e)"
       },
       "smart_ranking": {
-	"title": "Intelligente Sortierung von Elementen im Launcher",
-	"desc": "Apps basierend auf ihrer Nutzungshäufigkeit und der darin verbrachten Zeit sortieren"
-      },			
+        "title": "Intelligente Sortierung von Elementen im Launcher",
+        "desc": "Apps basierend auf ihrer Nutzungshäufigkeit und der darin verbrachten Zeit sortieren"
+      },
       "test": "Starter öffnen"
     },
     "notifications": {
@@ -832,7 +832,7 @@
       "full": "Vollständig",
       "round": "Rund",
       "compact": "Kompakt",
-      "minimal": "Minimalistisch",	 		
+      "minimal": "Minimalistisch",
       "rect": "Rechteckig",
       "rounded": "Abgerundet"
     }
@@ -891,7 +891,8 @@
       "current_focus": "Fokuswechsel des aktiven Fensters überwachen und protokollieren",
       "monitors_detect": "Aktive Bildschirmausgänge und Bildwiederholraten abfragen",
       "location_manual": "Geografische Koordinaten und Zeitzone manuell festlegen",
-      "blue_light_filter": "Farbtemperatur und Tag/Nacht-Zeitplan anpassen"
+      "blue_light_filter": "Farbtemperatur und Tag/Nacht-Zeitplan anpassen",
+      "translate": "Sofortige Text- und Auswahlübersetzung"
     }
   },
   "daemon": {
@@ -1001,5 +1002,18 @@
       "disabling_dm": "-> Konfliktverursachender Display-Manager wird deaktiviert: {dm}",
       "sddm_success": "-> SDDM Material You Design installiert und Dienst aktiviert [ OK ]"
     }
+  },
+  "translator": {
+    "title": "Übersetzer",
+    "status_translating": "Übersetzen...",
+    "speed": "Geschwindigkeit: ",
+    "detected": "Erkannt: ",
+    "input_label": "Quelltext",
+    "placeholder": "Text eingeben, einfügen oder einsprechen...",
+    "chars": "Zeichen",
+    "translation_label": "Übersetzung",
+    "empty_prompt": "Die Übersetzung wird hier sofort angezeigt...",
+    "recent": "Zuletzt verwendet:",
+    "failed": "Keine Übersetzung verfügbar"
   }
 }
