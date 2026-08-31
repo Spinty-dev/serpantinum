@@ -26,7 +26,6 @@
     "tabs": {
       "welcome": "Welcome",
       "general": "General",
-      "autostart": "Autostart",
       "display": "Display",
       "bar": "Bar",
       "launcher": "Launcher",
@@ -36,50 +35,8 @@
       "wellbeing": "Wellbeing",
       "tutorial": "Tutorial",
       "update": "Update",
-      "about": "About"
-    },
-    "autostart": {
-      "title": "Autostart",
-      "desc": "Manage programs, binaries, and scripts launched automatically upon session start",
-      "master_switch": {
-        "title": "Enable Autostart",
-        "desc": "Globally execute the configured startup application list on login"
-      },
-      "add_button": "Add Application",
-      "empty_title": "No autostart applications",
-      "empty_desc": "Click 'Add Application' to specify commands, binaries, delays, and repetition counts.",
-      "name_label": "Name",
-      "name_placeholder": "e.g. Discord, EasyEffects, Script",
-      "exec_label": "Executable Command",
-      "exec_placeholder": "Binary path or name with flags (e.g. discord --start-minimized)",
-      "browse_file": "Browse File",
-      "delay_label": "Startup Delay",
-      "delay_desc": "Time in seconds to wait before launching",
-      "delay_unit": "s",
-      "count_label": "Launch Count",
-      "count_desc": "Number of instances to execute upon startup",
-      "repeat_delay_label": "Repeat Interval",
-      "repeat_delay_desc": "Delay between repeated executions",
-      "workspace_label": "Workspace",
-      "workspace_default": "Default",
-      "silent_label": "Silent Launch",
-      "silent_desc": "Do not steal focus when window opens",
-      "condition_label": "Launch Condition",
-      "condition_always": "Always",
-      "condition_ac_only": "AC Power Only",
-      "condition_battery_only": "Battery Only",
-      "condition_multi_monitor": "Multi-Monitor Only",
-      "restart_crash_label": "Keep-Alive / Watchdog",
-      "restart_crash_desc": "Automatically respawn process if it crashes",
-      "status_running": "Running",
-      "status_success": "Success",
-      "status_failed": "Failed",
-      "status_idle": "Idle",
-      "view_log": "Log",
-      "no_log": "Log is currently empty",
-      "run_now": "Run Now",
-      "delete": "Delete",
-      "toggle": "Enable / Disable"
+      "about": "About",
+      "autostart": "Autostart"
     },
     "launcher": {
       "position": {
@@ -103,9 +60,9 @@
         "desc": "Command prefix used for > executions (e.g. kitty -e, alacritty -e, foot -e)"
       },
       "smart_ranking": {
-	"title": "Smart sorting of items in launcher",
-	"desc": "Sort apps based on usage and amount of time spent in them"			
-      },			
+        "title": "Smart sorting of items in launcher",
+        "desc": "Sort apps based on usage and amount of time spent in them"
+      },
       "test": "Open launcher"
     },
     "notifications": {
@@ -492,7 +449,50 @@
         "excluded_apps_desc": "Exclude apps from overall tracking going forward"
       }
     },
-    "update_available": "Update available"
+    "update_available": "Update available",
+    "autostart": {
+      "title": "Autostart",
+      "desc": "Manage programs, binaries, and scripts launched automatically upon session start",
+      "master_switch": {
+        "title": "Enable Autostart",
+        "desc": "Globally execute the configured startup application list on login"
+      },
+      "add_button": "Add Application",
+      "empty_title": "No autostart applications",
+      "empty_desc": "Click 'Add Application' to specify commands, binaries, delays, and repetition counts.",
+      "name_label": "Name",
+      "name_placeholder": "e.g. Discord, EasyEffects, Script",
+      "exec_label": "Executable Command",
+      "exec_placeholder": "Binary path or name with flags (e.g. discord --start-minimized)",
+      "browse_file": "Browse File",
+      "delay_label": "Startup Delay",
+      "delay_desc": "Time in seconds to wait before launching",
+      "delay_unit": "s",
+      "count_label": "Launch Count",
+      "count_desc": "Number of instances to execute upon startup",
+      "repeat_delay_label": "Repeat Interval",
+      "repeat_delay_desc": "Delay between repeated executions",
+      "workspace_label": "Workspace",
+      "workspace_default": "Default",
+      "silent_label": "Silent Launch",
+      "silent_desc": "Do not steal focus when window opens",
+      "condition_label": "Launch Condition",
+      "condition_always": "Always",
+      "condition_ac_only": "AC Power Only",
+      "condition_battery_only": "Battery Only",
+      "condition_multi_monitor": "Multi-Monitor Only",
+      "restart_crash_label": "Keep-Alive / Watchdog",
+      "restart_crash_desc": "Automatically respawn process if it crashes",
+      "status_running": "Running",
+      "status_success": "Success",
+      "status_failed": "Failed",
+      "status_idle": "Idle",
+      "view_log": "Log",
+      "no_log": "Log is currently empty",
+      "run_now": "Run Now",
+      "delete": "Delete",
+      "toggle": "Enable / Disable"
+    }
   },
   "sysnotif": {
     "battery": {
@@ -874,7 +874,7 @@
       "digital": "Digital",
       "analog": "Analog",
       "full": "Full",
-      "minimal": "Minimal",			
+      "minimal": "Minimal",
       "round": "Round",
       "compact": "Compact",
       "rect": "Rect",
@@ -936,7 +936,7 @@
       "monitors_detect": "Query active display outputs and refresh rates",
       "location_manual": "Set geographic coordinates and timezone manually",
       "blue_light_filter": "Adjust color temperature and automatic day/night schedule",
-      "autostart": "Execute user-configured autostart applications and services"
+      "translate": "Instant text and selection translator"
     }
   },
   "daemon": {
@@ -1046,5 +1046,25 @@
       "disabling_dm": "-> Disabling conflicting display manager: {dm}",
       "sddm_success": "-> SDDM Material You theme installed and service enabled [ OK ]"
     }
+  },
+  "translator": {
+    "title": "Translator",
+    "status_translating": "Translating...",
+    "speed": "Speed: ",
+    "detected": "Detected: ",
+    "input_label": "Source Text",
+    "placeholder": "Type, paste, or speak text here...",
+    "chars": "chars",
+    "translation_label": "Translation",
+    "empty_prompt": "Translation will appear here instantly...",
+    "recent": "Recent:",
+    "failed": "No translation available",
+    "quick_settings": "Quick Replace Settings",
+    "replace_settings_title": "Quick Selection Replace",
+    "replace_settings_desc": "Translates selected text and replaces in-place",
+    "auto_paste": "Auto-paste translated text",
+    "auto_paste_sub": "If disabled — translation is only copied to clipboard",
+    "keep_clipboard": "Keep translation in clipboard",
+    "keep_clipboard_sub": "If disabled — original clipboard content is restored after paste"
   }
 }

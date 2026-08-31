@@ -170,20 +170,14 @@ Item {
         }
 
         let iconName = "";
-        if (typeof DesktopEntries !== "undefined" && DesktopEntries.applications) {
-            for (let app of DesktopEntries.applications) {
-                if (!app) continue;
-                let appExec = (app.exec || "").toLowerCase();
-                let appName = (app.name || "").toLowerCase();
-                let appId = (app.id || "").toLowerCase();
-                if (appExec.includes(baseLower) || appName === name.toLowerCase() || appId.includes(baseLower)) {
-                    if (app.icon) {
-                        iconName = app.icon;
-                        break;
-                    }
+        try {
+            if (typeof DesktopEntries !== "undefined" && typeof DesktopEntries.heuristicLookup === "function") {
+                let entry = DesktopEntries.heuristicLookup(clean) || (name ? DesktopEntries.heuristicLookup(name) : null);
+                if (entry && entry.icon) {
+                    iconName = entry.icon;
                 }
             }
-        }
+        } catch(e) {}
 
         return { isIcon: iconName !== "", icon: iconName, fontIcon: "󰑮", isScript: false };
     }
@@ -519,22 +513,23 @@ Item {
                                     radius: rootObj.s(6)
                                     color: Qt.alpha(ThemeBackend.surface1, 0.6)
 
-                                    property var iconInfo: autostartTabRoot.resolveAppIcon(entryCard.entryExec, entryCard.entryName)
+                                    property var iconInfo: (autostartTabRoot.resolveAppIcon(entryCard.entryExec, entryCard.entryName)) || ({ isIcon: false, icon: "", fontIcon: "󰑮", isScript: false })
 
-                                    IconImage {
+                                    Image {
                                         anchors.fill: parent
                                         anchors.margins: rootObj.s(5)
-                                        source: parent.iconInfo.isIcon ? (parent.iconInfo.icon.startsWith("/") ? ("file://" + parent.iconInfo.icon) : ("image://icon/" + parent.iconInfo.icon)) : ""
-                                        visible: parent.iconInfo.isIcon
+                                        source: (parent.iconInfo && parent.iconInfo.isIcon) ? (parent.iconInfo.icon.startsWith("/") ? ("file://" + parent.iconInfo.icon) : ("image://icon/" + parent.iconInfo.icon)) : ""
+                                        visible: parent.iconInfo && parent.iconInfo.isIcon && status === Image.Ready
+                                        fillMode: Image.PreserveAspectFit
                                     }
 
                                     Text {
                                         anchors.centerIn: parent
-                                        visible: !parent.iconInfo.isIcon
-                                        text: parent.iconInfo.fontIcon
+                                        visible: !parent.iconInfo || !parent.iconInfo.isIcon
+                                        text: (parent.iconInfo && parent.iconInfo.fontIcon) ? parent.iconInfo.fontIcon : "󰑮"
                                         font.family: ThemeBackend.fontFamily
                                         font.pixelSize: rootObj.s(16)
-                                        color: parent.iconInfo.isScript ? ThemeBackend.yellow : ThemeBackend.mauve
+                                        color: (parent.iconInfo && parent.iconInfo.isScript) ? ThemeBackend.yellow : ThemeBackend.mauve
                                     }
                                 }
                             }

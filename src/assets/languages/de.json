@@ -26,7 +26,6 @@
     "tabs": {
       "welcome": "Willkommen",
       "general": "Allgemein",
-      "autostart": "Autostart",
       "display": "Bildschirm",
       "bar": "Leiste",
       "launcher": "Starter",
@@ -36,50 +35,8 @@
       "wellbeing": "Wohlbefinden",
       "tutorial": "Tutorial",
       "update": "Update",
-      "about": "Über"
-    },
-    "autostart": {
-      "title": "Autostart",
-      "desc": "Verwalten Sie Programme, Binärdateien und Skripte, die beim Sitzungsstart automatisch ausgeführt werden",
-      "master_switch": {
-        "title": "Autostart aktivieren",
-        "desc": "Konfigurierte Autostart-Anwendungsliste bei der Anmeldung global ausführen"
-      },
-      "add_button": "Anwendung hinzufügen",
-      "empty_title": "Keine Autostart-Anwendungen",
-      "empty_desc": "Klicken Sie auf 'Anwendung hinzufügen', um Befehle, Binärdateien, Verzögerungen und Wiederholungen festzulegen.",
-      "name_label": "Name",
-      "name_placeholder": "z. B. Discord, EasyEffects, Skript",
-      "exec_label": "Ausführungsbefehl",
-      "exec_placeholder": "Binärpfad oder Name mit Flags (z. B. discord --start-minimized)",
-      "browse_file": "Datei durchsuchen",
-      "delay_label": "Startverzögerung",
-      "delay_desc": "Wartezeit in Sekunden vor dem Start",
-      "delay_unit": "s",
-      "count_label": "Startanzahl",
-      "count_desc": "Anzahl der beim Start auszuführenden Instanzen",
-      "repeat_delay_label": "Wiederholungsintervall",
-      "repeat_delay_desc": "Verzögerung zwischen wiederholten Starts",
-      "workspace_label": "Arbeitsbereich (Workspace)",
-      "workspace_default": "Standard",
-      "silent_label": "Lautloser Start (Silent)",
-      "silent_desc": "Fenster im Hintergrund ohne Fokus öffnen",
-      "condition_label": "Startbedingung",
-      "condition_always": "Immer",
-      "condition_ac_only": "Nur Netzbetrieb (AC)",
-      "condition_battery_only": "Nur Akkubetrieb",
-      "condition_multi_monitor": "Nur bei Multi-Monitor",
-      "restart_crash_label": "Neustart bei Absturz (Keep-Alive)",
-      "restart_crash_desc": "Dienst bei Absturz automatisch neu starten",
-      "status_running": "Läuft",
-      "status_success": "Erfolgreich",
-      "status_failed": "Fehlgeschlagen",
-      "status_idle": "Inaktiv",
-      "view_log": "Protokoll",
-      "no_log": "Protokoll ist derzeit leer",
-      "run_now": "Jetzt starten",
-      "delete": "Löschen",
-      "toggle": "Aktivieren / Deaktivieren"
+      "about": "Über",
+      "autostart": "Autostart"
     },
     "launcher": {
       "position": {
@@ -103,9 +60,9 @@
         "desc": "Befehlspräfix für > Ausführungen (z. B. kitty -e, alacritty -e, foot -e)"
       },
       "smart_ranking": {
-	"title": "Intelligente Sortierung von Elementen im Launcher",
-	"desc": "Apps basierend auf ihrer Nutzungshäufigkeit und der darin verbrachten Zeit sortieren"
-      },			
+        "title": "Intelligente Sortierung von Elementen im Launcher",
+        "desc": "Apps basierend auf ihrer Nutzungshäufigkeit und der darin verbrachten Zeit sortieren"
+      },
       "test": "Starter öffnen"
     },
     "notifications": {
@@ -492,7 +449,50 @@
         "excluded_apps_desc": "Apps künftig von der Gesamterfassung ausschließen"
       }
     },
-    "update_available": "Update verfügbar"
+    "update_available": "Update verfügbar",
+    "autostart": {
+      "title": "Autostart",
+      "desc": "Verwalten Sie Programme, Binärdateien und Skripte, die beim Sitzungsstart automatisch ausgeführt werden",
+      "master_switch": {
+        "title": "Autostart aktivieren",
+        "desc": "Konfigurierte Autostart-Anwendungsliste bei der Anmeldung global ausführen"
+      },
+      "add_button": "Anwendung hinzufügen",
+      "empty_title": "Keine Autostart-Anwendungen",
+      "empty_desc": "Klicken Sie auf 'Anwendung hinzufügen', um Befehle, Binärdateien, Verzögerungen und Wiederholungen festzulegen.",
+      "name_label": "Name",
+      "name_placeholder": "z. B. Discord, EasyEffects, Skript",
+      "exec_label": "Ausführungsbefehl",
+      "exec_placeholder": "Binärpfad oder Name mit Flags (z. B. discord --start-minimized)",
+      "browse_file": "Datei durchsuchen",
+      "delay_label": "Startverzögerung",
+      "delay_desc": "Wartezeit in Sekunden vor dem Start",
+      "delay_unit": "s",
+      "count_label": "Startanzahl",
+      "count_desc": "Anzahl der beim Start auszuführenden Instanzen",
+      "repeat_delay_label": "Wiederholungsintervall",
+      "repeat_delay_desc": "Verzögerung zwischen wiederholten Starts",
+      "workspace_label": "Arbeitsbereich (Workspace)",
+      "workspace_default": "Standard",
+      "silent_label": "Lautloser Start (Silent)",
+      "silent_desc": "Fenster im Hintergrund ohne Fokus öffnen",
+      "condition_label": "Startbedingung",
+      "condition_always": "Immer",
+      "condition_ac_only": "Nur Netzbetrieb (AC)",
+      "condition_battery_only": "Nur Akkubetrieb",
+      "condition_multi_monitor": "Nur bei Multi-Monitor",
+      "restart_crash_label": "Neustart bei Absturz (Keep-Alive)",
+      "restart_crash_desc": "Dienst bei Absturz automatisch neu starten",
+      "status_running": "Läuft",
+      "status_success": "Erfolgreich",
+      "status_failed": "Fehlgeschlagen",
+      "status_idle": "Inaktiv",
+      "view_log": "Protokoll",
+      "no_log": "Protokoll ist derzeit leer",
+      "run_now": "Jetzt starten",
+      "delete": "Löschen",
+      "toggle": "Aktivieren / Deaktivieren"
+    }
   },
   "sysnotif": {
     "battery": {
@@ -876,7 +876,7 @@
       "full": "Vollständig",
       "round": "Rund",
       "compact": "Kompakt",
-      "minimal": "Minimalistisch",	 		
+      "minimal": "Minimalistisch",
       "rect": "Rechteckig",
       "rounded": "Abgerundet"
     }
@@ -936,7 +936,7 @@
       "monitors_detect": "Aktive Bildschirmausgänge und Bildwiederholraten abfragen",
       "location_manual": "Geografische Koordinaten und Zeitzone manuell festlegen",
       "blue_light_filter": "Farbtemperatur und Tag/Nacht-Zeitplan anpassen",
-      "autostart": "Benutzerdefinierte Autostart-Anwendungen und -Dienste ausführen"
+      "translate": "Sofortige Text- und Auswahlübersetzung"
     }
   },
   "daemon": {
@@ -1046,5 +1046,25 @@
       "disabling_dm": "-> Konfliktverursachender Display-Manager wird deaktiviert: {dm}",
       "sddm_success": "-> SDDM Material You Design installiert und Dienst aktiviert [ OK ]"
     }
+  },
+  "translator": {
+    "title": "Übersetzer",
+    "status_translating": "Übersetzen...",
+    "speed": "Geschwindigkeit: ",
+    "detected": "Erkannt: ",
+    "input_label": "Quelltext",
+    "placeholder": "Text eingeben, einfügen oder einsprechen...",
+    "chars": "Zeichen",
+    "translation_label": "Übersetzung",
+    "empty_prompt": "Die Übersetzung wird hier sofort angezeigt...",
+    "recent": "Zuletzt verwendet:",
+    "failed": "Keine Übersetzung verfügbar",
+    "quick_settings": "Schnelle Ersetzung",
+    "replace_settings_title": "Schnelle Auswahl-Ersetzung",
+    "replace_settings_desc": "Übersetzt markierten Text und ersetzt ihn direkt",
+    "auto_paste": "Übersetzten Text automatisch einfügen",
+    "auto_paste_sub": "Wenn deaktiviert — nur in die Zwischenablage kopiert",
+    "keep_clipboard": "In Zwischenablage behalten",
+    "keep_clipboard_sub": "Wenn deaktiviert — ursprüngliche Zwischenablage wird wiederhergestellt"
   }
 }
