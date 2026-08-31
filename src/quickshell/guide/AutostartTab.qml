@@ -36,9 +36,16 @@ Item {
             : ((typeof Config !== "undefined" && typeof Config.getSetting === "function")
                 ? Config.getSetting("autostart", autostartTabRoot.defaultAutostartSettings)
                 : autostartTabRoot.defaultAutostartSettings);
-        autostartTabRoot.autostartSettings = s || autostartTabRoot.defaultAutostartSettings;
+        if (!s) s = autostartTabRoot.defaultAutostartSettings;
+
+        let newEntries = Array.isArray(s.entries) ? s.entries : [];
+        if (autostartTabRoot.entriesList.length > 0 && JSON.stringify(autostartTabRoot.autostartSettings) === JSON.stringify(s) && autostartTabRoot.entriesList.length === newEntries.length) {
+            return;
+        }
+
+        autostartTabRoot.autostartSettings = s;
         autostartTabRoot.masterEnabled = (s && s.enabled !== undefined) ? s.enabled : true;
-        autostartTabRoot.entriesList = (s && Array.isArray(s.entries)) ? s.entries : [];
+        autostartTabRoot.entriesList = newEntries;
     }
 
     property int activePickerIndex: -1
