@@ -47,7 +47,7 @@ Item {
 
         Rectangle {
             id: activeTabHighlight
-            property int prevIdx: 0
+            property int prevIdx: root.currentIndex
             property int curIdx: root.currentIndex
 
             onCurIdxChanged: {

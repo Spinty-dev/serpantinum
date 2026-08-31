@@ -26,17 +26,20 @@ Item {
         "entries": []
     })
 
-    property var autostartSettings: {
-        let s = (typeof Config !== "undefined" && Config.rawSettings) ? Config.rawSettings["autostart"] : undefined;
-        if (s !== undefined && s !== null) return s;
-        if (typeof Config !== "undefined" && typeof Config.getSetting === "function") {
-            return Config.getSetting("autostart", autostartTabRoot.defaultAutostartSettings);
-        }
-        return autostartTabRoot.defaultAutostartSettings;
-    }
+    property var autostartSettings: defaultAutostartSettings
+    property bool masterEnabled: true
+    property var entriesList: []
 
-    property bool masterEnabled: autostartSettings && autostartSettings.enabled !== undefined ? autostartSettings.enabled : true
-    property var entriesList: (autostartSettings && Array.isArray(autostartSettings.entries)) ? autostartSettings.entries : []
+    function syncSettings() {
+        let s = (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings["autostart"])
+            ? Config.rawSettings["autostart"]
+            : ((typeof Config !== "undefined" && typeof Config.getSetting === "function")
+                ? Config.getSetting("autostart", autostartTabRoot.defaultAutostartSettings)
+                : autostartTabRoot.defaultAutostartSettings);
+        autostartTabRoot.autostartSettings = s || autostartTabRoot.defaultAutostartSettings;
+        autostartTabRoot.masterEnabled = (s && s.enabled !== undefined) ? s.enabled : true;
+        autostartTabRoot.entriesList = (s && Array.isArray(s.entries)) ? s.entries : [];
+    }
 
     property int activePickerIndex: -1
     property var collapsedEntriesMap: ({})
@@ -71,32 +74,39 @@ Item {
     }
 
     function updateEntrySilent(index, key, val) {
-        let current = JSON.parse(JSON.stringify(autostartSettings || defaultAutostartSettings));
-        if (!Array.isArray(current.entries) || index < 0 || index >= current.entries.length) return;
-        current.entries[index][key] = val;
+        if (!Array.isArray(entriesList) || index < 0 || index >= entriesList.length) return;
+        entriesList[index][key] = val;
+        let current = {
+            "enabled": autostartTabRoot.masterEnabled,
+            "entries": entriesList
+        };
         autostartTabRoot.autostartSettings = current;
         debounceTimer.restart();
     }
 
     function flushEntry(index, key, val) {
-        let current = JSON.parse(JSON.stringify(autostartSettings || defaultAutostartSettings));
-        if (!Array.isArray(current.entries) || index < 0 || index >= current.entries.length) return;
-        current.entries[index][key] = val;
+        if (!Array.isArray(entriesList) || index < 0 || index >= entriesList.length) return;
+        entriesList[index][key] = val;
+        let current = {
+            "enabled": autostartTabRoot.masterEnabled,
+            "entries": entriesList
+        };
         autostartTabRoot.autostartSettings = current;
         Config.setSetting("autostart", current);
     }
 
     function toggleMasterEnabled(val) {
-        let current = JSON.parse(JSON.stringify(autostartSettings || defaultAutostartSettings));
-        current.enabled = val;
         autostartTabRoot.masterEnabled = val;
+        let current = {
+            "enabled": val,
+            "entries": entriesList
+        };
         autostartTabRoot.autostartSettings = current;
         Config.setSetting("autostart", current);
     }
 
     function addEntry() {
-        let current = JSON.parse(JSON.stringify(autostartSettings || defaultAutostartSettings));
-        if (!Array.isArray(current.entries)) current.entries = [];
+        let list = Array.isArray(entriesList) ? entriesList.slice() : [];
         let newEntry = {
             "id": "auto_" + Date.now().toString(36) + Math.random().toString(36).substr(2, 4),
             "name": "",
@@ -110,15 +120,25 @@ Item {
             "condition": "always",
             "restartOnCrash": false
         };
-        current.entries.push(newEntry);
+        list.push(newEntry);
+        autostartTabRoot.entriesList = list;
+        let current = {
+            "enabled": autostartTabRoot.masterEnabled,
+            "entries": list
+        };
         autostartTabRoot.autostartSettings = current;
         Config.setSetting("autostart", current);
     }
 
     function deleteEntry(index) {
-        let current = JSON.parse(JSON.stringify(autostartSettings || defaultAutostartSettings));
-        if (!Array.isArray(current.entries) || index < 0 || index >= current.entries.length) return;
-        current.entries.splice(index, 1);
+        let list = Array.isArray(entriesList) ? entriesList.slice() : [];
+        if (index < 0 || index >= list.length) return;
+        list.splice(index, 1);
+        autostartTabRoot.entriesList = list;
+        let current = {
+            "enabled": autostartTabRoot.masterEnabled,
+            "entries": list
+        };
         autostartTabRoot.autostartSettings = current;
         Config.setSetting("autostart", current);
     }
@@ -234,11 +254,7 @@ Item {
     Connections {
         target: typeof Config !== "undefined" ? Config : null
         function onSettingsLoaded() {
-            let s = (typeof Config !== "undefined" && Config.rawSettings) ? Config.rawSettings["autostart"] : undefined;
-            if (s !== undefined && s !== null) {
-                autostartTabRoot.autostartSettings = s;
-                autostartTabRoot.masterEnabled = (s && s.enabled !== undefined) ? s.enabled : true;
-            }
+            autostartTabRoot.syncSettings();
         }
     }
 
@@ -249,6 +265,7 @@ Item {
     }
 
     Component.onCompleted: {
+        autostartTabRoot.syncSettings();
         if (!statusReaderProc.running) {
             statusReaderProc.running = true;
         }
@@ -263,15 +280,16 @@ Item {
             let idx = autostartTabRoot.activePickerIndex;
             if (idx >= 0 && idx < autostartTabRoot.entriesList.length) {
                 let curItem = autostartTabRoot.entriesList[idx];
-                let current = JSON.parse(JSON.stringify(autostartSettings || defaultAutostartSettings));
-                if (Array.isArray(current.entries) && idx < current.entries.length) {
-                    current.entries[idx]["exec"] = filePath;
-                    if (!curItem.name || curItem.name.trim() === "") {
-                        current.entries[idx]["name"] = fileName;
-                    }
-                    autostartTabRoot.autostartSettings = current;
-                    Config.setSetting("autostart", current);
+                curItem["exec"] = filePath;
+                if (!curItem.name || curItem.name.trim() === "") {
+                    curItem["name"] = fileName;
                 }
+                let current = {
+                    "enabled": autostartTabRoot.masterEnabled,
+                    "entries": autostartTabRoot.entriesList
+                };
+                autostartTabRoot.autostartSettings = current;
+                Config.setSetting("autostart", current);
             }
         }
     }
