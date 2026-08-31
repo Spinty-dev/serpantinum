@@ -22,7 +22,7 @@ enable_system_service() {
 
     case "$init_sys" in
         systemd)
-            sudo systemctl enable --now "$svc.service" 2>/dev/null || sudo systemctl enable "$svc.service" 2>/dev/null || true
+            sudo systemctl enable --now "$svc.service" 2>/dev/null || sudo systemctl enable -f "$svc.service" 2>/dev/null || sudo systemctl enable "$svc.service" 2>/dev/null || true
             ;;
         openrc)
             sudo rc-update add "$svc" default 2>/dev/null || true
@@ -38,6 +38,36 @@ enable_system_service() {
             ;;
         s6)
             sudo s6-rc-bundle-update -b add default "$svc" 2>/dev/null || true
+            ;;
+        *)
+            true
+            ;;
+    esac
+}
+
+disable_system_service() {
+    local svc="$1"
+    local init_sys="$2"
+
+    case "$init_sys" in
+        systemd)
+            sudo systemctl disable --now "$svc.service" 2>/dev/null || sudo systemctl disable "$svc.service" 2>/dev/null || sudo systemctl disable "$svc" 2>/dev/null || true
+            ;;
+        openrc)
+            sudo rc-service "$svc" stop 2>/dev/null || true
+            sudo rc-update del "$svc" default 2>/dev/null || true
+            ;;
+        dinit)
+            sudo dinitctl stop "$svc" 2>/dev/null || true
+            sudo dinitctl disable "$svc" 2>/dev/null || true
+            ;;
+        runit)
+            if [ -L "/var/service/$svc" ] || [ -d "/var/service/$svc" ]; then
+                sudo rm -f "/var/service/$svc" 2>/dev/null || true
+            fi
+            ;;
+        s6)
+            sudo s6-rc-bundle-update -b del default "$svc" 2>/dev/null || true
             ;;
         *)
             true
@@ -75,5 +105,4 @@ setup_services() {
     enable_user_service "easyeffects" "$init_sys"
     enable_system_service "NetworkManager" "$init_sys"
     enable_system_service "power-profiles-daemon" "$init_sys"
-    enable_system_service "swayosd-libinput-backend" "$init_sys"
 }

@@ -98,6 +98,7 @@ PanelWindow {
 
     property real osdWidth: (isSolid && isSideBar) ? s(58) : s(296)
     property real osdHeight: (isSolid && isSideBar) ? s(296) : s(58)
+    property real collapsedWidth: s(58)
 
     visible: isVisible || osdContainer.animProgress > 0.001
 
@@ -162,18 +163,21 @@ PanelWindow {
         property real animProgress: osdWindow.isVisible ? 1.0 : 0.0
         Behavior on animProgress {
             NumberAnimation {
-                duration: osdWindow.isVisible ? 340 : 260
-                easing.type: Easing.OutCubic
+                duration: osdWindow.isVisible ? 450 : 300
+                easing.type: osdWindow.isVisible ? Easing.OutQuint : Easing.InCubic
             }
         }
 
         property real dynamicCornerRadius: osdWindow.isSolid ? Math.max(0, Math.min(osdWindow.cornerRadius, (osdWindow.isSideBar ? width : height))) : 0
 
         x: {
-            if (osdWindow.isSolid && osdWindow.isSideBar && osdWindow.isRightBar) {
-                return (osdWindow.clampedX + osdWindow.osdWidth) - width;
+            if (osdWindow.isSolid) {
+                if (osdWindow.isSideBar && osdWindow.isRightBar) {
+                    return (osdWindow.clampedX + osdWindow.osdWidth) - width;
+                }
+                return osdWindow.clampedX;
             }
-            return osdWindow.clampedX;
+            return (osdWindow.width - width) / 2;
         }
         y: {
             if (osdWindow.isSolid && !osdWindow.isSideBar && osdWindow.isBottomBar) {
@@ -182,10 +186,13 @@ PanelWindow {
             return osdWindow.clampedY;
         }
         width: {
-            if (osdWindow.isSolid && osdWindow.isSideBar) {
-                return osdWindow.osdWidth * animProgress;
+            if (osdWindow.isSolid) {
+                if (osdWindow.isSideBar) {
+                    return osdWindow.osdWidth * animProgress;
+                }
+                return osdWindow.osdWidth;
             }
-            return osdWindow.osdWidth;
+            return osdWindow.collapsedWidth + (osdWindow.osdWidth - osdWindow.collapsedWidth) * animProgress;
         }
         height: {
             if (osdWindow.isSolid && !osdWindow.isSideBar) {
@@ -193,9 +200,8 @@ PanelWindow {
             }
             return osdWindow.osdHeight;
         }
-        opacity: (osdWindow.isVisible || animProgress > 0.001) ? 1.0 : 0.0
+        opacity: osdWindow.isSolid ? ((osdWindow.isVisible || animProgress > 0.001) ? 1.0 : 0.0) : Math.max(0.0, Math.min(1.0, animProgress * 1.5))
 
-        scale: !osdWindow.isSolid ? (0.82 + (0.18 * animProgress)) : 1.0
         transformOrigin: {
             if (osdWindow.isSolid) {
                 if (osdWindow.isSideBar) {
@@ -628,6 +634,8 @@ PanelWindow {
                     anchors.left: parent.left
                     anchors.leftMargin: osdWindow.s(58)
                     anchors.verticalCenter: parent.verticalCenter
+                    opacity: Math.max(0.0, Math.min(1.0, (osdContainer.animProgress - 0.2) / 0.8))
+                    visible: opacity > 0.01
 
                     from: 0.0
                     to: 100.0

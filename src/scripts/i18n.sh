@@ -64,18 +64,22 @@ t() {
         lang="$(get_current_language)"
     fi
 
+    local translated=""
     local i18n_file="${I18N_DIR}/${lang}.json"
 
-    if [[ ! -f "$i18n_file" ]]; then
-        printf '%s' "$key"
-        return
+    if [[ -f "$i18n_file" ]]; then
+        translated="$(jq -r --arg k "$key" '
+            ($k | split(".")) as $path |
+            getpath($path) | strings
+        ' "$i18n_file" 2>/dev/null)"
     fi
 
-    local translated
-    translated="$(jq -r --arg k "$key" '
-        ($k | split(".")) as $path |
-        getpath($path) | strings
-    ' "$i18n_file" 2>/dev/null)"
+    if [[ -z "$translated" && "$lang" != "en" && -f "${I18N_DIR}/en.json" ]]; then
+        translated="$(jq -r --arg k "$key" '
+            ($k | split(".")) as $path |
+            getpath($path) | strings
+        ' "${I18N_DIR}/en.json" 2>/dev/null)"
+    fi
 
     if [[ -z "$translated" ]]; then
         printf '%s' "$key"

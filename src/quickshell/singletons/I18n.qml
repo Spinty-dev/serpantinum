@@ -50,28 +50,39 @@ Item {
         }
     }
 
-    function t(key, args) {
-        if (!root.isReady || !root.translations || !root.translations[root.currentLang]) return key;
+    function resolveKey(lang, key) {
+        if (!root.translations || !root.translations[lang]) return null;
 
         let parts = key.split('.');
-        let current = root.translations[root.currentLang];
+        let current = root.translations[lang];
 
         for (let i = 0; i < parts.length; i++) {
             if (current === null || current === undefined || current[parts[i]] === undefined) {
-                return key;
+                return null;
             }
             current = current[parts[i]];
         }
 
-        if (typeof current !== "string") return key;
+        return typeof current === "string" ? current : null;
+    }
+
+    function t(key, args) {
+        if (!root.isReady) return key;
+
+        let text = resolveKey(root.currentLang, key);
+        if (text === null && root.currentLang !== "en") {
+            text = resolveKey("en", key);
+        }
+
+        if (text === null) return key;
 
         if (args && typeof args === "object") {
             for (let k in args) {
-                current = current.replace(new RegExp("\\{" + k + "\\}", "g"), args[k]);
+                text = text.replace(new RegExp("\\{" + k + "\\}", "g"), args[k]);
             }
         }
 
-        return current;
+        return text;
     }
 
     Component.onCompleted: {

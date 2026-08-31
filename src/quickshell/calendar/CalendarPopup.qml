@@ -13,14 +13,16 @@ Item {
     id: window
     focus: true
 
-    readonly property real sf: Scaler.baseScale
-
     function s(val) {
-        return Math.round(val * window.sf);
+        return Scaler.s(val);
     }
 
-    property real targetMasterHeight: Math.round(510 * window.sf)
-    property real targetMasterWidth: Math.round(1360 * window.sf)
+    property real targetMasterHeight: window.s(510)
+    property real targetMasterWidth: window.s(1360)
+    implicitWidth: targetMasterWidth
+    implicitHeight: targetMasterHeight
+    width: targetMasterWidth
+    height: targetMasterHeight
 
     Timer {
         id: focusTimer
@@ -119,8 +121,7 @@ Item {
             focusTimer.restart();
             window.currentTime = new Date();
             updateCalendarGrid();
-            weatherPoller.running = false;
-            weatherPoller.running = true;
+            Weather.refresh(false);
             resetAndPlayIntro();
         } else {
             introAnim.stop();
@@ -198,7 +199,7 @@ Item {
         interval: 1000; running: window.visible; repeat: true
         onTriggered: {
             window.currentTime = new Date();
-            window.secondPulse = 1.06;
+            window.secondPulse = 1.02;
             pulseReset.start();
 
             if (window.currentTime.getHours() === 0 && window.currentTime.getMinutes() === 0 && window.currentTime.getSeconds() === 0) {
@@ -207,7 +208,7 @@ Item {
         }
     }
 
-    property var weatherData: null
+    property var weatherData: Weather.data
     property int weatherView: 0
     property color activeWeatherHex: {
         if (!window.weatherData) return window.mauve;
@@ -257,14 +258,14 @@ Item {
         id: weatherTransitionAnim
         ParallelAnimation {
             NumberAnimation { target: window; property: "weatherContentOpacity"; to: 0.0; duration: 250; easing.type: Easing.InSine }
-            NumberAnimation { target: window; property: "weatherContentOffset"; to: Math.round(-40 * window.sf) * weatherAnimDirection; duration: 250; easing.type: Easing.InSine }
+            NumberAnimation { target: window; property: "weatherContentOffset"; to: -window.s(40) * weatherAnimDirection; duration: 250; easing.type: Easing.InSine }
             NumberAnimation { target: window; property: "transitionSpin"; to: 180 * weatherAnimDirection; duration: 300; easing.type: Easing.InBack }
             NumberAnimation { target: window; property: "transitionScale"; to: 0.8; duration: 300; easing.type: Easing.InCubic }
         }
         ScriptAction {
             script: {
                 window.weatherView = window.targetWeatherView;
-                window.weatherContentOffset = Math.round(40 * window.sf) * weatherAnimDirection;
+                window.weatherContentOffset = window.s(40) * weatherAnimDirection;
                 window.transitionSpin = -180 * weatherAnimDirection;
             }
         }
@@ -310,29 +311,6 @@ Item {
         return bestIdx !== -1 ? bestIdx : 0;
     }
 
-    Process {
-        id: weatherPoller
-        command: ["bash", Caching.serpantinumDir + "/scripts/weather.sh", "--json"]
-        running: false
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let txt = this.text.trim();
-                if (txt !== "") {
-                    try { window.weatherData = JSON.parse(txt); } catch(e) {}
-                }
-            }
-        }
-    }
-
-    Timer {
-        interval: 150000
-        running: window.visible; repeat: true
-        onTriggered: {
-            weatherPoller.running = false;
-            weatherPoller.running = true;
-        }
-    }
-
     property real centerOffset: 0
     property int monthOffset: 0
     property int targetMonthOffset: 0
@@ -347,12 +325,12 @@ Item {
         id: calendarTransitionAnim
         ParallelAnimation {
             NumberAnimation { target: window; property: "calendarContentOpacity"; to: 0.0; duration: 200; easing.type: Easing.InSine }
-            NumberAnimation { target: window; property: "calendarContentOffset"; to: Math.round(-20 * window.sf) * calendarAnimDirection; duration: 200; easing.type: Easing.InSine }
+            NumberAnimation { target: window; property: "calendarContentOffset"; to: -window.s(20) * calendarAnimDirection; duration: 200; easing.type: Easing.InSine }
         }
         ScriptAction {
             script: {
                 window.monthOffset = window.targetMonthOffset;
-                window.calendarContentOffset = Math.round(20 * window.sf) * calendarAnimDirection;
+                window.calendarContentOffset = window.s(20) * calendarAnimDirection;
             }
         }
         ParallelAnimation {
@@ -415,7 +393,7 @@ Item {
         if (visible) {
             forceActiveFocus();
             focusTimer.restart();
-            weatherPoller.running = true;
+            Weather.refresh(false);
             resetAndPlayIntro();
         }
     }
@@ -445,15 +423,15 @@ Item {
                     SequentialAnimation on x {
                         loops: Animation.Infinite
                         running: window.visible
-                        NumberAnimation { from: Math.round(350 * window.sf); to: Math.round(-350 * window.sf); duration: 30000; easing.type: Easing.InOutSine }
-                        NumberAnimation { from: Math.round(-350 * window.sf); to: Math.round(350 * window.sf); duration: 30000; easing.type: Easing.InOutSine }
+                        NumberAnimation { from: window.s(350); to: -window.s(350); duration: 30000; easing.type: Easing.InOutSine }
+                        NumberAnimation { from: -window.s(350); to: window.s(350); duration: 30000; easing.type: Easing.InOutSine }
                     }
                     SequentialAnimation on y {
                         loops: Animation.Infinite
                         running: window.visible
-                        NumberAnimation { from: 0; to: Math.round(200 * window.sf); duration: 15000; easing.type: Easing.OutSine }
-                        NumberAnimation { from: Math.round(200 * window.sf); to: Math.round(-200 * window.sf); duration: 30000; easing.type: Easing.InOutSine }
-                        NumberAnimation { from: Math.round(-200 * window.sf); to: 0; duration: 15000; easing.type: Easing.InSine }
+                        NumberAnimation { from: 0; to: window.s(200); duration: 15000; easing.type: Easing.OutSine }
+                        NumberAnimation { from: window.s(200); to: -window.s(200); duration: 30000; easing.type: Easing.InOutSine }
+                        NumberAnimation { from: -window.s(200); to: 0; duration: 15000; easing.type: Easing.InSine }
                     }
                 }
             }
@@ -470,15 +448,15 @@ Item {
                     SequentialAnimation on x {
                         loops: Animation.Infinite
                         running: window.visible
-                        NumberAnimation { from: 0; to: Math.round(-300 * window.sf); duration: 18750; easing.type: Easing.OutSine }
-                        NumberAnimation { from: Math.round(-300 * window.sf); to: Math.round(300 * window.sf); duration: 37500; easing.type: Easing.InOutSine }
-                        NumberAnimation { from: Math.round(300 * window.sf); to: 0; duration: 18750; easing.type: Easing.InSine }
+                        NumberAnimation { from: 0; to: -window.s(300); duration: 18750; easing.type: Easing.OutSine }
+                        NumberAnimation { from: -window.s(300); to: window.s(300); duration: 37500; easing.type: Easing.InOutSine }
+                        NumberAnimation { from: window.s(300); to: 0; duration: 18750; easing.type: Easing.InSine }
                     }
                     SequentialAnimation on y {
                         loops: Animation.Infinite
                         running: window.visible
-                        NumberAnimation { from: Math.round(-250 * window.sf); to: Math.round(250 * window.sf); duration: 37500; easing.type: Easing.InOutSine }
-                        NumberAnimation { from: Math.round(250 * window.sf); to: Math.round(-250 * window.sf); duration: 37500; easing.type: Easing.InOutSine }
+                        NumberAnimation { from: -window.s(250); to: window.s(250); duration: 37500; easing.type: Easing.InOutSine }
+                        NumberAnimation { from: window.s(250); to: -window.s(250); duration: 37500; easing.type: Easing.InOutSine }
                     }
                 }
             }
@@ -495,15 +473,15 @@ Item {
                     SequentialAnimation on x {
                         loops: Animation.Infinite
                         running: window.visible
-                        NumberAnimation { from: Math.round(400 * window.sf); to: Math.round(-400 * window.sf); duration: 25000; easing.type: Easing.InOutSine }
-                        NumberAnimation { from: Math.round(-400 * window.sf); to: Math.round(400 * window.sf); duration: 25000; easing.type: Easing.InOutSine }
+                        NumberAnimation { from: window.s(400); to: -window.s(400); duration: 25000; easing.type: Easing.InOutSine }
+                        NumberAnimation { from: -window.s(400); to: window.s(400); duration: 25000; easing.type: Easing.InOutSine }
                     }
                     SequentialAnimation on y {
                         loops: Animation.Infinite
                         running: window.visible
-                        NumberAnimation { from: 0; to: Math.round(-350 * window.sf); duration: 12500; easing.type: Easing.OutSine }
-                        NumberAnimation { from: Math.round(-350 * window.sf); to: Math.round(350 * window.sf); duration: 25000; easing.type: Easing.InOutSine }
-                        NumberAnimation { from: Math.round(350 * window.sf); to: 0; duration: 12500; easing.type: Easing.InSine }
+                        NumberAnimation { from: 0; to: -window.s(350); duration: 12500; easing.type: Easing.OutSine }
+                        NumberAnimation { from: -window.s(350); to: window.s(350); duration: 25000; easing.type: Easing.InOutSine }
+                        NumberAnimation { from: window.s(350); to: 0; duration: 12500; easing.type: Easing.InSine }
                     }
                 }
             }
@@ -524,7 +502,7 @@ Item {
                         return "";
                     }
                     font.family: ThemeBackend.fontFamily
-                    font.pixelSize: Math.round(560 * window.sf)
+                    font.pixelSize: window.s(520)
                     color: window.activeWeatherHex
                     Behavior on color { ColorAnimation { duration: 1500 } }
 
@@ -532,9 +510,9 @@ Item {
                     SequentialAnimation on opacity {
                         loops: Animation.Infinite
                         running: window.visible
-                        NumberAnimation { from: 0.015; to: 0.022; duration: 5625; easing.type: Easing.OutSine }
-                        NumberAnimation { from: 0.022; to: 0.01; duration: 11250; easing.type: Easing.InOutSine }
-                        NumberAnimation { from: 0.01; to: 0.015; duration: 5625; easing.type: Easing.InSine }
+                        NumberAnimation { from: 0.015; to: 0.018; duration: 5625; easing.type: Easing.OutSine }
+                        NumberAnimation { from: 0.018; to: 0.012; duration: 11250; easing.type: Easing.InOutSine }
+                        NumberAnimation { from: 0.012; to: 0.015; duration: 5625; easing.type: Easing.InSine }
                     }
 
                     transform: [
@@ -542,7 +520,7 @@ Item {
                             SequentialAnimation on y {
                                 loops: Animation.Infinite
                                 running: window.visible
-                                NumberAnimation { to: Math.round(-20 * window.sf); duration: 6000; easing.type: Easing.InOutSine }
+                                NumberAnimation { to: -window.s(8); duration: 6000; easing.type: Easing.InOutSine }
                                 NumberAnimation { to: 0; duration: 6000; easing.type: Easing.InOutSine }
                             }
                         },
@@ -555,45 +533,45 @@ Item {
                 id: centralHub
                 anchors.centerIn: parent
                 anchors.verticalCenterOffset: window.centerOffset
-                width: Math.round(1 * window.sf)
-                height: Math.round(1 * window.sf)
+                width: window.s(1)
+                height: window.s(1)
                 z: 5
 
                 opacity: introClock
                 scale: 0.85 + (0.15 * introClock)
 
                 transform: [
-                    Translate { y: Math.round(25 * window.sf) * (1.0 - introClock) },
+                    Translate { y: window.s(25) * (1.0 - introClock) },
                     Translate {
                         SequentialAnimation on y {
                             loops: Animation.Infinite
                             running: window.visible
-                            NumberAnimation { to: Math.round(-15 * window.sf); duration: 4000; easing.type: Easing.InOutSine }
-                            NumberAnimation { to: 0; duration: 4000; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: -window.s(6); duration: 4500; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 0; duration: 4500; easing.type: Easing.InOutSine }
                         }
                     },
                     Rotation {
                         axis { x: 1; y: 0; z: 0 }
                         SequentialAnimation on angle {
                             loops: Animation.Infinite; running: window.visible
-                            NumberAnimation { to: 3.5; duration: 4200; easing.type: Easing.InOutSine }
-                            NumberAnimation { to: -3.5; duration: 4200; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 1.5; duration: 4800; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: -1.5; duration: 4800; easing.type: Easing.InOutSine }
                         }
                     },
                     Rotation {
                         axis { x: 0; y: 1; z: 0 }
                         SequentialAnimation on angle {
                             loops: Animation.Infinite; running: window.visible
-                            NumberAnimation { to: 2.5; duration: 5100; easing.type: Easing.InOutSine }
-                            NumberAnimation { to: -2.5; duration: 5100; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 1.2; duration: 5500; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: -1.2; duration: 5500; easing.type: Easing.InOutSine }
                         }
                     },
                     Rotation {
                         axis { x: 0; y: 0; z: 1 }
                         SequentialAnimation on angle {
                             loops: Animation.Infinite; running: window.visible
-                            NumberAnimation { to: 1.5; duration: 5800; easing.type: Easing.InOutSine }
-                            NumberAnimation { to: -1.5; duration: 5800; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 0.8; duration: 6200; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: -0.8; duration: 6200; easing.type: Easing.InOutSine }
                         }
                     }
                 ]
@@ -601,36 +579,36 @@ Item {
                 Canvas {
                     id: orbitCanvas
                     z: -10
-                    x: Math.round(-380 * window.sf)
-                    y: Math.round(-190 * window.sf)
-                    width: Math.round(760 * window.sf)
-                    height: Math.round(380 * window.sf)
+                    anchors.centerIn: parent
+                    width: window.s(680)
+                    height: window.s(320)
                     opacity: 0.35
 
                     SequentialAnimation on scale {
                         loops: Animation.Infinite
                         running: window.visible
-                        NumberAnimation { to: 1.035; duration: 3500; easing.type: Easing.InOutSine }
-                        NumberAnimation { to: 1.0; duration: 3500; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: 1.012; duration: 4000; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: 1.0; duration: 4000; easing.type: Easing.InOutSine }
                     }
 
                     onWidthChanged: requestPaint()
+                    onHeightChanged: requestPaint()
 
                     onPaint: {
                         var ctx = getContext("2d");
                         ctx.clearRect(0, 0, width, height);
                         ctx.beginPath();
-                        var currentRx = Math.round(290 * window.sf);
-                        var currentRy = Math.round(130 * window.sf);
+                        var currentRx = window.s(268);
+                        var currentRy = window.s(124);
                         for (var i = 0; i <= Math.PI * 2; i += 0.05) {
                             var xx = width / 2 + Math.cos(i) * currentRx;
                             var yy = height / 2 + Math.sin(i) * currentRy;
                             if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
                         }
                         ctx.strokeStyle = Qt.alpha(window.textAccent, 0.45);
-                        ctx.lineWidth = Math.max(1, Math.round(2 * window.sf));
+                        ctx.lineWidth = Math.max(1, window.s(2));
                         ctx.lineCap = "round";
-                        ctx.setLineDash([Math.round(4 * window.sf), Math.round(12 * window.sf)]);
+                        ctx.setLineDash([window.s(4), window.s(12)]);
                         ctx.stroke();
                     }
                     Behavior on opacity { NumberAnimation { duration: 1500 } }
@@ -640,41 +618,31 @@ Item {
                     anchors.centerIn: parent
                     spacing: 0
                     z: 0
-                    scale: 0.95 + (0.05 * window.secondPulse)
+                    scale: 0.98 + (0.02 * window.secondPulse)
 
-                    RowLayout {
+                    Text {
                         Layout.alignment: Qt.AlignHCenter
-                        spacing: Math.round(2 * window.sf)
-                        Text {
-                            text: Qt.formatTime(window.currentTime, "HH:mm")
-                            font.family: ThemeBackend.fontFamily
-                            font.weight: Font.Black
-                            font.pixelSize: Math.round(84 * window.sf)
-                            color: window.text
-                            style: Text.Outline
-                            styleColor: Qt.alpha(window.crust, 0.4)
+                        text: DateTime.time
+                        font.family: ThemeBackend.fontFamily
+                        font.weight: Font.Black
+                        font.pixelSize: {
+                            let baseSize = window.s(84);
+                            let len = (DateTime.time || "").length;
+                            if (len <= 5) return baseSize;
+                            let scaleFactor = Math.min(1.0, Math.pow(5 / len, 0.7));
+                            return Math.round(Math.max(window.s(36), baseSize * scaleFactor));
                         }
-                        Text {
-                            text: Qt.formatTime(window.currentTime, ":ss")
-                            font.family: ThemeBackend.fontFamily
-                            font.weight: Font.Bold
-                            font.pixelSize: Math.round(32 * window.sf)
-                            color: window.textAccent
-                            Layout.alignment: Qt.AlignBottom
-                            Layout.bottomMargin: Math.round(15 * window.sf)
-                            opacity: window.secondPulse > 1.02 ? 1.0 : 0.6
-                            style: Text.Outline
-                            styleColor: Qt.alpha(window.crust, 0.4)
-                            Behavior on color { ColorAnimation { duration: 1000 } }
-                        }
+                        color: window.text
+                        style: Text.Outline
+                        styleColor: Qt.alpha(window.crust, 0.4)
                     }
 
                     Text {
                         Layout.alignment: Qt.AlignHCenter
-                        text: Qt.formatDateTime(window.currentTime, "dddd, MMMM dd")
+                        text: DateTime.fullDate
                         font.family: ThemeBackend.fontFamily
                         font.weight: Font.Bold
-                        font.pixelSize: Math.round(16 * window.sf)
+                        font.pixelSize: window.s(16)
                         color: window.subtext0
                         opacity: 0.9
                     }
@@ -695,57 +663,58 @@ Item {
                             property bool isToday: window.weatherView === 0
                             property bool isHighlighted: isToday && index === window.activeHourIndex
 
-                            property real rx: Math.round(290 * window.sf) * orbitCanvas.scale
-                            property real ry: Math.round(130 * window.sf) * orbitCanvas.scale
+                            property real rx: window.s(268) * orbitCanvas.scale
+                            property real ry: window.s(124) * orbitCanvas.scale
 
                             property int relIdx: isToday ? (index - window.activeHourIndex) : index
                             property real targetAngleDeg: isToday ? (65 + (relIdx * 30)) : (index * (360 / Math.max(1, mCount)))
                             property real orbitOffset: isToday ? 0 : window.globalOrbitOffset
-                            property real osc: isToday ? (Math.sin(window.globalOscPhase + index) * 5) : 0
+                            property real osc: isToday ? (Math.sin(window.globalOscPhase + index) * 2.5) : 0
                             property real rad: (targetAngleDeg + orbitOffset + osc + window.transitionSpin) * (Math.PI / 180)
 
                             x: Math.cos(rad) * rx - width / 2
                             y: Math.sin(rad) * ry - height / 2
-                            z: Math.sin(rad) * Math.round(100 * window.sf)
+                            z: Math.sin(rad) * window.s(100)
 
-                            scale: isHighlighted ? 1.35 : (isToday ? (0.95 + 0.20 * Math.sin(rad)) : (0.90 + 0.25 * Math.sin(rad)))
+                            property real baseScale: isHighlighted ? 1.35 : (isToday ? (0.95 + 0.20 * Math.sin(rad)) : (0.90 + 0.25 * Math.sin(rad)))
+                            scale: baseScale * (hrMa.containsMouse && !isHighlighted ? 1.04 : 1.0)
+                            Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
+
                             opacity: isHighlighted ? 1.0 : (isToday ? (0.7 + 0.3 * ((Math.sin(rad) + 1) / 2)) : (0.65 + 0.35 * ((Math.sin(rad) + 1) / 2)))
 
-                            width: Math.round(56 * window.sf)
-                            height: Math.round(95 * window.sf)
+                            width: window.s(52)
+                            height: window.s(86)
 
                             Rectangle {
                                 anchors.fill: parent
-                                radius: Math.round(28 * window.sf)
-                                color: isHighlighted ? window.textAccent : (hrMa.containsMouse ? Qt.tint(window.surface1, Qt.alpha(window.textAccent, 0.15)) : Qt.tint(window.surface0, Qt.alpha(window.textAccent, 0.04)))
-                                border.color: isHighlighted ? Qt.lighter(window.textAccent, 1.1) : (hrMa.containsMouse ? Qt.alpha(window.textAccent, 0.45) : Qt.alpha(window.surface1, 0.6))
+                                radius: Math.min(window.s(26), ThemeBackend.borderRadius * 1.75)
+                                color: isHighlighted ? window.textAccent : (hrMa.containsMouse ? Qt.lighter(window.surface0, 1.12) : window.surface0)
+                                border.color: isHighlighted ? Qt.lighter(window.textAccent, 1.1) : (hrMa.containsMouse ? Qt.alpha(window.surface2, 0.9) : Qt.alpha(window.surface1, 0.6))
                                 border.width: 1
 
-                                Behavior on color { ColorAnimation { duration: 200 } }
-                                Behavior on border.color { ColorAnimation { duration: 200 } }
+                                Behavior on color { ColorAnimation { duration: 180 } }
+                                Behavior on border.color { ColorAnimation { duration: 180 } }
 
                                 ColumnLayout {
                                     anchors.centerIn: parent
-                                    spacing: Math.round(4 * window.sf)
+                                    spacing: window.s(3)
 
                                     Text {
                                         Layout.alignment: Qt.AlignHCenter
                                         text: modelData ? modelData.time : ""
                                         font.family: ThemeBackend.fontFamily
                                         font.weight: Font.Bold
-                                        font.pixelSize: Math.round(12 * window.sf)
+                                        font.pixelSize: window.s(11.5)
                                         color: isHighlighted ? window.base : (hrMa.containsMouse ? window.text : window.overlay1)
+                                        Behavior on color { ColorAnimation { duration: 180 } }
                                     }
 
                                     Text {
                                         Layout.alignment: Qt.AlignHCenter
                                         text: modelData ? (modelData.icon || (window.weatherData && window.weatherData.forecast[window.weatherView] ? window.weatherData.forecast[window.weatherView].icon : "")) : ""
                                         font.family: ThemeBackend.fontFamily
-                                        font.pixelSize: Math.round(18 * window.sf)
+                                        font.pixelSize: window.s(16.5)
                                         color: isHighlighted ? window.base : (modelData ? (modelData.hex || window.text) : window.text)
-
-                                        transform: Translate { y: hrMa.containsMouse ? Math.round(-3 * window.sf) : 0 }
-                                        Behavior on transform { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
                                     }
 
                                     Text {
@@ -753,7 +722,7 @@ Item {
                                         text: modelData ? (modelData.temp + "°") : ""
                                         font.family: ThemeBackend.fontFamily
                                         font.weight: Font.Black
-                                        font.pixelSize: Math.round(14 * window.sf)
+                                        font.pixelSize: window.s(12.5)
                                         color: isHighlighted ? window.base : window.text
                                     }
                                 }
@@ -767,10 +736,10 @@ Item {
             Rectangle {
                 id: calendarRect
                 anchors.left: parent.left
-                anchors.top: parent.top
-                anchors.margins: Math.round(40 * window.sf)
-                width: Math.round(320 * window.sf)
-                height: Math.round(420 * window.sf)
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: window.s(40)
+                width: window.s(310)
+                height: window.s(350)
                 color: Qt.alpha(window.surface0, 0.2)
                 radius: ThemeBackend.borderRadius
                 border.color: Qt.alpha(window.surface1, 0.4)
@@ -778,25 +747,29 @@ Item {
                 z: 10
 
                 opacity: introCalendar
-                transform: Translate { x: Math.round(-40 * window.sf) * (1.0 - introCalendar) }
+                transform: Translate { x: -window.s(40) * (1.0 - introCalendar) }
 
                 HoverHandler { id: calHover }
 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: Math.round(25 * window.sf)
-                    spacing: Math.round(15 * window.sf)
+                    anchors.topMargin: window.s(12)
+                    anchors.bottomMargin: window.s(12)
+                    anchors.leftMargin: window.s(16)
+                    anchors.rightMargin: window.s(16)
+                    spacing: 0
 
                     RowLayout {
                         Layout.fillWidth: true
+                        Layout.bottomMargin: window.s(14)
 
                         IconButton {
-                            Layout.preferredWidth: Math.round(32 * window.sf)
-                            Layout.preferredHeight: Math.round(32 * window.sf)
-                            size: Math.round(32 * window.sf)
-                            cornerRadius: Math.round(8 * window.sf)
+                            Layout.preferredWidth: window.s(28)
+                            Layout.preferredHeight: window.s(28)
+                            size: window.s(28)
+                            cornerRadius: window.s(8)
                             buttonIcon: "󰃭"
-                            iconFontSize: Math.round(16 * window.sf)
+                            iconFontSize: window.s(14)
                             accentColor: window.surface0
                             textColor: window.text
                             opacity: window.targetMonthOffset !== 0 ? 1.0 : 0.0
@@ -806,12 +779,12 @@ Item {
                         }
 
                         IconButton {
-                            Layout.preferredWidth: Math.round(32 * window.sf)
-                            Layout.preferredHeight: Math.round(32 * window.sf)
-                            size: Math.round(32 * window.sf)
-                            cornerRadius: Math.round(8 * window.sf)
+                            Layout.preferredWidth: window.s(28)
+                            Layout.preferredHeight: window.s(28)
+                            size: window.s(28)
+                            cornerRadius: window.s(8)
                             buttonIcon: ""
-                            iconFontSize: Math.round(16 * window.sf)
+                            iconFontSize: window.s(14)
                             accentColor: window.surface0
                             textColor: window.text
                             onClicked: window.setMonthOffset(window.targetMonthOffset - 1)
@@ -822,9 +795,9 @@ Item {
                             text: window.targetMonthName.toUpperCase()
                             font.family: ThemeBackend.fontFamily
                             font.weight: Font.Black
-                            font.pixelSize: Math.round(16 * window.sf)
+                            font.pixelSize: window.s(14)
                             fontSizeMode: Text.Fit
-                            minimumPixelSize: Math.round(8 * window.sf)
+                            minimumPixelSize: window.s(8)
                             color: window.text
                             horizontalAlignment: Text.AlignHCenter
 
@@ -833,12 +806,12 @@ Item {
                         }
 
                         IconButton {
-                            Layout.preferredWidth: Math.round(32 * window.sf)
-                            Layout.preferredHeight: Math.round(32 * window.sf)
-                            size: Math.round(32 * window.sf)
-                            cornerRadius: Math.round(8 * window.sf)
+                            Layout.preferredWidth: window.s(28)
+                            Layout.preferredHeight: window.s(28)
+                            size: window.s(28)
+                            cornerRadius: window.s(8)
                             buttonIcon: ""
-                            iconFontSize: Math.round(16 * window.sf)
+                            iconFontSize: window.s(14)
                             accentColor: window.surface0
                             textColor: window.text
                             onClicked: window.setMonthOffset(window.targetMonthOffset + 1)
@@ -847,6 +820,8 @@ Item {
 
                     RowLayout {
                         Layout.fillWidth: true
+                        Layout.bottomMargin: window.s(4)
+
                         Repeater {
                             model: [I18n.t("calendar.days.mo"), I18n.t("calendar.days.tu"), I18n.t("calendar.days.we"), I18n.t("calendar.days.th"), I18n.t("calendar.days.fr"), I18n.t("calendar.days.sa"), I18n.t("calendar.days.su")]
                             Text {
@@ -854,7 +829,7 @@ Item {
                                 text: modelData
                                 font.family: ThemeBackend.fontFamily
                                 font.weight: Font.Black
-                                font.pixelSize: Math.round(14 * window.sf)
+                                font.pixelSize: window.s(11.5)
                                 color: window.overlay0
                                 horizontalAlignment: Text.AlignHCenter
                             }
@@ -865,8 +840,8 @@ Item {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         columns: 7
-                        rowSpacing: Math.round(4 * window.sf)
-                        columnSpacing: Math.round(4 * window.sf)
+                        rowSpacing: window.s(2)
+                        columnSpacing: window.s(3)
 
                         opacity: window.calendarContentOpacity
                         transform: Translate { x: window.calendarContentOffset }
@@ -878,8 +853,8 @@ Item {
                                 Layout.fillHeight: true
                                 enabled: false
                                 buttonText: dayNum
-                                textFontSize: Math.round(13 * window.sf)
-                                cornerRadius: Math.round(8 * window.sf)
+                                textFontSize: window.s(11.5)
+                                cornerRadius: window.s(5)
                                 horizontalPadding: 0
                                 accentColor: isToday ? window.textAccent : "transparent"
                                 textColor: isToday ? window.base : (isCurrentMonth ? window.text : window.surface0)
@@ -890,32 +865,33 @@ Item {
             }
 
             Item {
+                id: weatherContainer
                 anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.margins: Math.round(40 * window.sf)
-                width: Math.round(320 * window.sf)
-                height: Math.round(420 * window.sf)
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.rightMargin: window.s(40)
+                width: window.s(320)
+                height: window.s(430)
                 z: 10
 
                 opacity: introWeather
-                transform: Translate { x: Math.round(40 * window.sf) * (1.0 - introWeather) }
+                transform: Translate { x: window.s(40) * (1.0 - introWeather) }
 
                 ColumnLayout {
                     anchors.fill: parent
-                    spacing: Math.round(16 * window.sf)
+                    spacing: window.s(12)
 
                     RowLayout {
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignRight | Qt.AlignTop
-                        spacing: Math.round(20 * window.sf)
+                        spacing: window.s(14)
 
                         IconButton {
-                            Layout.preferredWidth: Math.round(32 * window.sf)
-                            Layout.preferredHeight: Math.round(32 * window.sf)
-                            size: Math.round(32 * window.sf)
-                            cornerRadius: Math.round(8 * window.sf)
+                            Layout.preferredWidth: window.s(28)
+                            Layout.preferredHeight: window.s(28)
+                            size: window.s(28)
+                            cornerRadius: window.s(8)
                             buttonIcon: ""
-                            iconFontSize: Math.round(12 * window.sf)
+                            iconFontSize: window.s(12)
                             accentColor: window.surface0
                             textColor: isHoveredOrHighlighted ? window.textAccent : window.overlay1
                             onClicked: window.setWeatherView(window.targetWeatherView - 1)
@@ -927,19 +903,19 @@ Item {
                             text: window.weatherData && window.weatherData.forecast[window.weatherView] ? window.weatherData.forecast[window.weatherView].day_full.toUpperCase() : I18n.t("calendar.loading")
                             font.family: ThemeBackend.fontFamily
                             font.weight: Font.Black
-                            font.pixelSize: Math.round(16 * window.sf)
+                            font.pixelSize: window.s(15)
                             fontSizeMode: Text.Fit
-                            minimumPixelSize: Math.round(8 * window.sf)
+                            minimumPixelSize: window.s(8)
                             color: window.text
                         }
 
                         IconButton {
-                            Layout.preferredWidth: Math.round(32 * window.sf)
-                            Layout.preferredHeight: Math.round(32 * window.sf)
-                            size: Math.round(32 * window.sf)
-                            cornerRadius: Math.round(8 * window.sf)
+                            Layout.preferredWidth: window.s(28)
+                            Layout.preferredHeight: window.s(28)
+                            size: window.s(28)
+                            cornerRadius: window.s(8)
                             buttonIcon: ""
-                            iconFontSize: Math.round(12 * window.sf)
+                            iconFontSize: window.s(12)
                             accentColor: window.surface0
                             textColor: isHoveredOrHighlighted ? window.textAccent : window.overlay1
                             onClicked: window.setWeatherView(window.targetWeatherView + 1)
@@ -952,10 +928,10 @@ Item {
 
                         Text {
                             Layout.alignment: Qt.AlignRight
-                            text: Math.round(window.displayedTemp) + "°C"
+                            text: Math.round(window.displayedTemp) + (Weather.unitSym || "°")
                             font.family: ThemeBackend.fontFamily
                             font.weight: Font.Black
-                            font.pixelSize: Math.round(80 * window.sf)
+                            font.pixelSize: window.s(72)
                             color: window.tempGlowColor
                             style: Text.Outline
                             styleColor: window.isTempAnimating ? Qt.alpha(window.tempGlowColor, 0.5) : Qt.alpha(window.crust, 0.4)
@@ -966,12 +942,12 @@ Item {
 
                         Text {
                             Layout.alignment: Qt.AlignRight
-                            Layout.maximumWidth: Math.round(320 * window.sf)
+                            Layout.maximumWidth: window.s(320)
                             horizontalAlignment: Text.AlignRight
                             text: (typeof Location !== "undefined" && Location.city && Location.city !== "") ? Location.city : (window.weatherData && window.weatherData.city ? window.weatherData.city : "")
                             font.family: ThemeBackend.fontFamily
                             font.weight: Font.Bold
-                            font.pixelSize: Math.round(15 * window.sf)
+                            font.pixelSize: window.s(14)
                             color: window.text
                             elide: Text.ElideRight
                             visible: text !== ""
@@ -979,13 +955,13 @@ Item {
 
                         Text {
                             Layout.alignment: Qt.AlignRight
-                            Layout.maximumWidth: Math.round(320 * window.sf)
-                            Layout.topMargin: Math.round(6 * window.sf)
+                            Layout.maximumWidth: window.s(320)
+                            Layout.topMargin: window.s(4)
                             horizontalAlignment: Text.AlignRight
                             text: window.weatherData && window.weatherData.forecast[window.weatherView] ? window.weatherData.forecast[window.weatherView].desc : ""
                             font.family: ThemeBackend.fontFamily
                             font.weight: Font.Medium
-                            font.pixelSize: Math.round(14 * window.sf)
+                            font.pixelSize: window.s(13)
                             wrapMode: Text.WordWrap
                             color: window.textAccent
                             Behavior on color { ColorAnimation { duration: 1000 } }
@@ -998,35 +974,33 @@ Item {
                     Item { Layout.fillHeight: true }
 
                     GridLayout {
-                        Layout.fillWidth: true
                         Layout.alignment: Qt.AlignRight | Qt.AlignBottom
-                        Layout.rightMargin: Math.round(-15 * window.sf)
-                        Layout.bottomMargin: Math.round(-15 * window.sf)
                         columns: 2
-                        rowSpacing: Math.round(8 * window.sf)
-                        columnSpacing: Math.round(8 * window.sf)
+                        rowSpacing: window.s(8)
+                        columnSpacing: window.s(8)
 
                         Repeater {
                             model: 4
 
                             ClickButton {
-                                Layout.preferredHeight: Math.round(44 * window.sf)
-                                Layout.preferredWidth: Math.round(100 * window.sf)
-                                cornerRadius: Math.round(8 * window.sf)
+                                Layout.preferredWidth: window.s(118)
+                                Layout.preferredHeight: window.s(42)
+                                cornerRadius: window.s(9)
+                                horizontalPadding: window.s(8)
 
                                 property var forecast: window.weatherData && window.weatherData.forecast[window.targetWeatherView] ? window.weatherData.forecast[window.targetWeatherView] : null
 
                                 buttonIcon: index === 0 ? "" : index === 1 ? "" : index === 2 ? "" : ""
                                 buttonText: forecast ? (
-                                    index === 0 ? forecast.wind + "m/s" :
+                                    index === 0 ? forecast.wind + (Weather.unit === "imperial" ? "mph" : "m/s") :
                                     index === 1 ? forecast.humidity + "%" :
                                     index === 2 ? forecast.pop + "%" :
                                     forecast.feels_like + "°"
                                 ) : ""
                                 subText: index === 0 ? I18n.t("calendar.weather.wind") : index === 1 ? I18n.t("calendar.weather.humid") : index === 2 ? I18n.t("calendar.weather.rain") : I18n.t("calendar.weather.feels")
 
-                                iconFontSize: Math.round(15 * window.sf)
-                                textFontSize: Math.round(12 * window.sf)
+                                iconFontSize: window.s(14)
+                                textFontSize: window.s(11.5)
 
                                 accentColor: window.surface0
                                 textColor: isHoveredOrHighlighted ? window.textAccent : window.overlay0

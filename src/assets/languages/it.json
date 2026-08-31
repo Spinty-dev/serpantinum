@@ -1068,13 +1068,6 @@
     "translation_label": "Traduzione",
     "empty_prompt": "La traduzione apparirà qui immediatamente...",
     "recent": "Recente:",
-    "failed": "Nessuna traduzione disponibile",
-    "quick_settings": "Impostazioni sostituzione rapida",
-    "replace_settings_title": "Sostituzione rapida selezione",
-    "replace_settings_desc": "Traduce il testo selezionato e lo sostituisce all'istante",
-    "auto_paste": "Incolla automaticamente il testo tradotto",
-    "auto_paste_sub": "Se disattivato — viene solo copiato negli appunti",
-    "keep_clipboard": "Conserva traduzione negli appunti",
-    "keep_clipboard_sub": "Se disattivato — gli appunti originali vengono ripristinati"
+    "failed": "Nessuna traduzione disponibile"
   }
 }

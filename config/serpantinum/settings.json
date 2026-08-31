@@ -25,15 +25,16 @@
       "left": [
         "left",
         "workspaces",
+        "media" 
+      ],
+     "center": [
         [
-          "media",
-          "vis"
+          "timedate",
+          "info",
+          "weather"
         ]
-      ],
-      "center": [
-        "centerbox"
-      ],
-      "right": [
+      ],      
+     "right": [
         "tray",
         [
           "kb",

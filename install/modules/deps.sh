@@ -1,5 +1,50 @@
 #!/usr/bin/env bash
 
+SUPPORTED_DISTROS=(
+    "arch"
+    "endeavouros"
+    "manjaro"
+    "cachyos"
+    "garuda"
+    "arcolinux"
+    "archcraft"
+    "artix"
+    "blackarch"
+    "rebornos"
+    "mabox"
+    "blendos"
+    "parch"
+    "parchlinux"
+    "biglinux"
+    "archlabs"
+    "archman"
+    "alci"
+    "bluestar"
+    "archbang"
+    "archex"
+    "archstrike"
+    "athena"
+    "athenaos"
+    "chimeraos"
+    "ctlos"
+    "crystal"
+    "hefftorlinux"
+    "instantos"
+    "nyarch"
+    "obarun"
+    "hyperbola"
+    "parabola"
+    "salientos"
+    "snal"
+    "steamos"
+    "holo"
+    "stormos"
+    "tearch"
+    "xerolinux"
+    "axyl"
+    "omarchy"
+)
+
 REQUIRED_PKGS=(
     "kitty" "cava" "zbar" "pavucontrol" "alsa-utils"
     "wl-clipboard" "fd" "qt6-multimedia" "qt6-5compat" "ripgrep"
@@ -28,15 +73,15 @@ check_supported_os() {
     if [ -f /etc/os-release ]; then
         local DETECTED_OS
         DETECTED_OS=$(awk -F= '/^ID=/{gsub(/"/, "", $2); print $2}' /etc/os-release)
-        case "$DETECTED_OS" in
-            arch|endeavouros|manjaro|cachyos|parch|garuda)
+
+        for os in "${SUPPORTED_DISTROS[@]}"; do
+            if [ "$DETECTED_OS" = "$os" ]; then
                 return 0
-                ;;
-            *)
-                echo "$(t "installer.os.error_unsupported" "os=$DETECTED_OS")"
-                exit 1
-                ;;
-        esac
+            fi
+        done
+
+        echo "$(t "installer.os.error_unsupported" "os=$DETECTED_OS")"
+        exit 1
     else
         echo "$(t "installer.os.error_not_found")"
         exit 1
@@ -97,13 +142,18 @@ install_fonts() {
     if [ ! -d "$target_fonts_dir" ] || [ -z "$(ls -A "$target_fonts_dir" 2>/dev/null | grep -i "\.ttf")" ]; then
         local font_cache="${XDG_CACHE_HOME:-"$HOME/.cache"}/serpantinum-fonts"
         mkdir -p "$font_cache" "$target_fonts_dir"
-        curl -sLo "$font_cache/Iosevka.zip" https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Iosevka.zip 2>/dev/null || true
-        if [ -f "$font_cache/Iosevka.zip" ]; then
-            unzip -q "$font_cache/Iosevka.zip" -d "$font_cache/" 2>/dev/null || true
-            mv "$font_cache"/*.ttf "$target_fonts_dir/" 2>/dev/null || true
-            rm -f "$target_fonts_dir/"*Mono*.ttf 2>/dev/null || true
-            sudo mkdir -p /usr/share/fonts/IosevkaNerdFont
-            sudo cp -r "$target_fonts_dir/"* /usr/share/fonts/IosevkaNerdFont/ 2>/dev/null || true
+        echo -e "\n\e[36m[ INFO ]\e[0m Downloading Iosevka Nerd Font..."
+        if curl -# -L --connect-timeout 15 --retry 3 "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Iosevka.zip" -o "$font_cache/Iosevka.zip"; then
+            if [ -f "$font_cache/Iosevka.zip" ]; then
+                echo -e "\e[36m[ INFO ]\e[0m Unpacking fonts..."
+                unzip -qo "$font_cache/Iosevka.zip" -d "$font_cache/" 2>/dev/null || true
+                mv "$font_cache"/*.ttf "$target_fonts_dir/" 2>/dev/null || true
+                rm -f "$target_fonts_dir/"*Mono*.ttf 2>/dev/null || true
+                sudo mkdir -p /usr/share/fonts/IosevkaNerdFont
+                sudo cp -r "$target_fonts_dir/"* /usr/share/fonts/IosevkaNerdFont/ 2>/dev/null || true
+            fi
+        else
+            echo -e "\e[33m[ WARN ]\e[0m Failed to download fonts, skipping..."
         fi
         rm -rf "$font_cache"
     fi

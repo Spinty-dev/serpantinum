@@ -34,7 +34,7 @@ hl.config({
   },
 
   misc = {
-    focus_on_activate = true,
+    focus_on_activate = false,
     font_family = "JetBrains Mono",
     disable_hyprland_logo = true,
     disable_splash_rendering = true,

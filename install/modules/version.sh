@@ -4,20 +4,55 @@ STATE_DIR="$HOME/.local/state/serpantinum"
 VERSION_FILE="$STATE_DIR/version"
 DEFAULT_FALLBACK_VERSION="2.0.0"
 
+format_uuid() {
+    local raw
+    raw=$(echo "$1" | tr -d '-' | tr '[:upper:]' '[:lower:]' | tr -cd '0-9a-f')
+    if [[ ${#raw} -eq 32 ]]; then
+        echo "$raw" | sed -E 's/(.{8})(.{4})(.{4})(.{4})(.{12})/\1-\2-\3-\4-\5/'
+    else
+        echo "$1"
+    fi
+}
+
 get_telemetry_id() {
     if [ -f "$VERSION_FILE" ]; then
         local id
         id=$(awk -F= '/^TELEMETRY_ID=/{gsub(/"/, "", $2); print $2}' "$VERSION_FILE")
         if [ -n "$id" ]; then
-            echo "$id"
+            format_uuid "$id"
             return
         fi
     fi
 
+    local raw_id=""
     if command -v uuidgen &> /dev/null; then
-        uuidgen
+        raw_id=$(uuidgen)
+    elif [ -f /proc/sys/kernel/random/uuid ]; then
+        raw_id=$(cat /proc/sys/kernel/random/uuid 2>/dev/null)
+    elif [ -f /etc/machine-id ]; then
+        raw_id=$(cat /etc/machine-id 2>/dev/null)
     else
-        cat /proc/sys/kernel/random/uuid 2>/dev/null || head -c 16 /dev/urandom | od -An -t x | tr -d ' '
+        raw_id=$(head -c 16 /dev/urandom | od -An -t x1 | tr -d ' \n')
+    fi
+
+    format_uuid "$raw_id"
+}
+
+get_telemetry_enabled() {
+    if [ -f "$VERSION_FILE" ]; then
+        local enabled
+        enabled=$(awk -F= '/^ENABLE_TELEMETRY=/{gsub(/"/, "", $2); print $2}' "$VERSION_FILE")
+        if [ "$enabled" = "false" ]; then
+            echo "false"
+            return
+        fi
+    fi
+    echo "true"
+}
+
+get_installed_version() {
+    if [ -f "$VERSION_FILE" ]; then
+        awk -F= '/^SERPANTINUM_VERSION=/{gsub(/"/, "", $2); print $2}' "$VERSION_FILE"
     fi
 }
 
@@ -84,6 +119,8 @@ write_version_state() {
 
     if [[ -z "$tel_id" ]]; then
         tel_id=$(get_telemetry_id)
+    else
+        tel_id=$(format_uuid "$tel_id")
     fi
 
     mkdir -p "$STATE_DIR"

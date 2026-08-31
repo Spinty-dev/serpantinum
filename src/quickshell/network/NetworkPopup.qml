@@ -54,9 +54,6 @@ Item {
     }
 
     function getBtDevicesList() {
-        if (window.btDevicesSnapshot && window.btDevicesSnapshot.length > 0) {
-            return window.btDevicesSnapshot;
-        }
         let adapter = Bluetooth.defaultAdapter;
         if (!adapter || !adapter.devices) return [];
         let devs = adapter.devices.values || adapter.devices;
@@ -70,26 +67,11 @@ Item {
     }
 
     function isEthDevice(dev) {
-        if (!dev) return false;
-        if (dev.networks !== undefined) return false;
-        if (typeof DeviceType !== "undefined") {
-            if (DeviceType.Ethernet !== undefined && dev.type === DeviceType.Ethernet) return true;
-            if (DeviceType.Wired !== undefined && dev.type === DeviceType.Wired) return true;
-        }
-        if (dev.type === 1 || dev.type === "wired" || dev.type === "ethernet") return true;
-        if (dev.hasLink !== undefined || dev.linkSpeed !== undefined) return true;
-        return false;
+        return !!dev && dev.type === DeviceType.Wired;
     }
 
     function isWifiDevice(dev) {
-        if (!dev) return false;
-        if (typeof DeviceType !== "undefined") {
-            if (DeviceType.Wifi !== undefined && dev.type === DeviceType.Wifi) return true;
-            if (DeviceType.Wireless !== undefined && dev.type === DeviceType.Wireless) return true;
-        }
-        if (dev.type === 2 || dev.type === "wifi" || dev.type === "wireless") return true;
-        if (dev.networks !== undefined) return true;
-        return false;
+        return !!dev && dev.type === DeviceType.Wifi;
     }
 
     function findDevices() {
@@ -101,8 +83,7 @@ Item {
             if (!d) continue;
             if (!window.ethDevice && window.isEthDevice(d)) {
                 window.ethDevice = d;
-            }
-            if (!window.wifiDevice && window.isWifiDevice(d)) {
+            } else if (!window.wifiDevice && window.isWifiDevice(d)) {
                 window.wifiDevice = d;
                 d.scannerEnabled = true;
             }
@@ -207,7 +188,14 @@ Item {
             function onDiscoveringChanged() {
                 window.requestBtRebuild();
             }
-            function onDevicesChanged() {
+        }
+        Connections {
+            target: (Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.devices) ? Bluetooth.defaultAdapter.devices : null
+            ignoreUnknownSignals: true
+            function onObjectInsertedPost(object, index) {
+                btSnapshotDebounce.restart();
+            }
+            function onObjectRemovedPost(object, index) {
                 btSnapshotDebounce.restart();
             }
         }
@@ -1126,13 +1114,18 @@ Item {
 
             map[mac] = d;
 
-            let name = d.name || d.deviceName || mac;
+            let deviceName = d.deviceName || "";
+            let alias = d.name || "";
+            let hasName = deviceName !== "";
             let paired = d.paired || d.bonded;
+
+            let name = hasName ? deviceName : (alias !== "" ? alias : mac);
+
             let connected = d.connected;
             let battery = d.batteryAvailable ? Math.round(d.battery * 100) : 0;
             let iconType = d.icon || "";
 
-            let icon = "";
+            let icon = "";
             let typeLower = iconType.toLowerCase();
             let nameLower = name.toLowerCase();
             if (typeLower.indexOf("headset") !== -1 || typeLower.indexOf("headphone") !== -1 || nameLower.indexOf("headphone") !== -1 || nameLower.indexOf("buds") !== -1 || nameLower.indexOf("pods") !== -1) icon = "🎧";
@@ -1152,6 +1145,8 @@ Item {
                     profile: window.btAudioProfiles[mac.toLowerCase()] || "Connected"
                 });
             } else {
+                if (!hasName && !paired) continue;
+
                 newDevices.push({
                     id: mac,
                     name: name,
@@ -2442,7 +2437,7 @@ Item {
                 anchors.bottomMargin: window.s(18)
                 implicitWidth: window.s(320)
                 implicitHeight: window.s(42)
-                fontPixelSize: 12
+                fontPixelSize: window.s(14)
                 cornerRadius: ThemeBackend.borderRadius
                 accentColor: window.activeColor
                 baseColor: "#1affffff"

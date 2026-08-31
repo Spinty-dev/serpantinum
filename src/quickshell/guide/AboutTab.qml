@@ -30,15 +30,6 @@ Item {
         }
     }
 
-    property real updateWavePhase: 0.0
-    NumberAnimation on updateWavePhase {
-        running: aboutTabRoot.visible && Updater.updateAvailable
-        loops: Animation.Infinite
-        from: 0
-        to: Math.PI * 2
-        duration: 6000
-    }
-
     function activateTab() {
         if (typeof SystemInfo !== "undefined") {
             SystemInfo.fetch();
@@ -183,34 +174,35 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: rootObj.s(12)
 
-                        Row {
+                        Text {
                             Layout.alignment: Qt.AlignLeft
                             Layout.bottomMargin: rootObj.s(4)
-                            spacing: 0
+                            text: "Update available v" + Updater.remoteVersion
+                            font.family: ThemeBackend.fontFamily
+                            font.weight: Font.Bold
+                            font.pixelSize: rootObj.s(18)
+                            color: ThemeBackend.mauve
+                        }
 
-                            Repeater {
-                                model: Array.from("Update available")
-                                Text {
-                                    required property string modelData
-                                    required property int index
+                        ClickButton {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: rootObj.s(36)
+                            horizontalPadding: rootObj.s(14)
+                            cornerRadius: ThemeBackend.borderRadius
+                            buttonText: "Changelog"
+                            textFontSize: rootObj.s(12)
+                            buttonIcon: "󰈙"
+                            iconFontSize: rootObj.s(16)
+                            accentColor: ThemeBackend.surface0
+                            textColor: ThemeBackend.text
 
-                                    text: modelData === " " ? "\u00A0" : modelData
-                                    font.family: ThemeBackend.fontFamily
-                                    font.weight: Font.Bold
-                                    font.pixelSize: rootObj.s(20)
-                                    color: ThemeBackend.mauve
-
-                                    transform: Translate {
-                                        y: Math.sin(aboutTabRoot.updateWavePhase - index * 0.35) * rootObj.s(2.5)
-                                    }
-                                }
-                            }
+                            onTriggered: Quickshell.execDetached(["xdg-open", "https://github.com/ilyamiro/serpantinum/blob/master/CHANGELOG.md"])
                         }
 
                         FillButton {
                             Layout.fillWidth: true
                             Layout.preferredHeight: rootObj.s(38)
-                            buttonText: "v" + Updater.localVersion + " → v" + Updater.remoteVersion
+                            buttonText: "Update"
                             buttonIcon: "󰚰"
                             accentColor: ThemeBackend.green
                             baseColor: ThemeBackend.surface0

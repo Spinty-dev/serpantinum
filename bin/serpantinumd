@@ -33,21 +33,16 @@ show_help() {
     echo "$(t "daemon.cli.description")"
     echo ""
     echo "$(t "daemon.cli.commands")"
-    echo "  start               $(t "daemon.cli.cmd_start")"
-    echo "  stop                $(t "daemon.cli.cmd_stop")"
-    echo "  status              $(t "daemon.cli.cmd_status")"
+    echo "  start                $(t "daemon.cli.cmd_start")"
+    echo "  stop                 $(t "daemon.cli.cmd_stop")"
+    echo "  status               $(t "daemon.cli.cmd_status")"
     echo ""
     echo "$(t "daemon.cli.options")"
-    echo "  -v, --verbose       $(t "daemon.cli.opt_verbose")"
-    echo "  -V, --version       $(t "daemon.cli.opt_version")"
-    echo "  -h, --help          $(t "daemon.cli.opt_help")"
+    echo "  -v, --verbose        $(t "daemon.cli.opt_verbose")"
+    echo "  -V, --version        $(t "daemon.cli.opt_version")"
+    echo "  -h, --help           $(t "daemon.cli.opt_help")"
     echo ""
 }
-
-if [ $# -eq 0 ]; then
-    show_help
-    exit 0
-fi
 
 COMMAND=""
 while [ $# -gt 0 ]; do
@@ -80,8 +75,7 @@ while [ $# -gt 0 ]; do
 done
 
 if [ -z "$COMMAND" ]; then
-    show_help
-    exit 0
+    COMMAND="start"
 fi
 
 if [ "$COMMAND" == "stop" ]; then
@@ -117,16 +111,28 @@ if [ "$COMMAND" == "start" ]; then
 
     CHILD_PIDS=()
 
+    terminate_tree() {
+        local target_pid="$1"
+        local child_pid
+        for child_pid in $(pgrep -P "$target_pid" 2>/dev/null); do
+            terminate_tree "$child_pid"
+        done
+        kill -TERM "$target_pid" 2>/dev/null
+    }
+
     cleanup() {
+        trap - SIGINT SIGTERM EXIT
         [ "$VERBOSE" = true ] && echo "$(t "daemon.shutting_down")"
 
         for pid in "${CHILD_PIDS[@]}"; do
-            if kill -0 "$pid" 2>/dev/null; then
-                kill -TERM "$pid" 2>/dev/null
-            fi
+            terminate_tree "$pid"
         done
 
-        pkill -P $$ 2>/dev/null
+        local direct_children
+        direct_children=$(pgrep -P $$ 2>/dev/null)
+        for pid in $direct_children; do
+            terminate_tree "$pid"
+        done
 
         rm -f "/tmp/serpantinumd.pid"
         rm -f "/tmp/serpantinumd.lock"

@@ -107,28 +107,59 @@ Item {
                 }
                 return idleTabRoot.defaultIdleSettings;
             });
+            idleTabRoot.refreshActionIds();
         }
     }
 
     property bool idleEnabled: idleSettings && idleSettings.enabled !== undefined ? idleSettings.enabled : false
     property bool manualInhibit: idleSettings && idleSettings.manualInhibit !== undefined ? idleSettings.manualInhibit : false
 
-    property var allActionList: {
-        let list = [];
-        let acts = (idleSettings && idleSettings.actions) ? idleSettings.actions : defaultIdleSettings.actions;
-        let keys = ["dim", "lock", "dpms", "suspend"];
+    property var actionIdsList: ["dim", "lock", "dpms", "suspend"]
 
-        for (let i = 0; i < keys.length; i++) {
-            let key = keys[i];
-            let item = (acts && acts[key]) ? Object.assign({}, defaultIdleSettings.actions[key], acts[key]) : defaultIdleSettings.actions[key];
-            list.push(item);
+    function refreshActionIds() {
+        let list = ["dim", "lock", "dpms", "suspend"];
+        let customs = (idleSettings && idleSettings.customActions && Array.isArray(idleSettings.customActions)) ? idleSettings.customActions : [];
+        for (let i = 0; i < customs.length; i++) {
+            if (customs[i] && customs[i].id) {
+                list.push(customs[i].id);
+            }
         }
+        let current = idleTabRoot.actionIdsList;
+        let same = (current && current.length === list.length);
+        if (same) {
+            for (let j = 0; j < list.length; j++) {
+                if (current[j] !== list[j]) {
+                    same = false;
+                    break;
+                }
+            }
+        }
+        if (!same) {
+            idleTabRoot.actionIdsList = list;
+        }
+    }
 
-        let customs = (idleSettings && idleSettings.customActions) ? idleSettings.customActions : [];
-        for (let j = 0; j < customs.length; j++) {
-            list.push(customs[j]);
+    onIdleSettingsChanged: refreshActionIds()
+
+    function isCustomAction(actId) {
+        return actId !== "dim" && actId !== "lock" && actId !== "dpms" && actId !== "suspend";
+    }
+
+    function getActionData(actId) {
+        if (!actId) return null;
+        if (actId === "dim" || actId === "lock" || actId === "dpms" || actId === "suspend") {
+            let acts = (idleSettings && idleSettings.actions) ? idleSettings.actions : defaultIdleSettings.actions;
+            let def = defaultIdleSettings.actions[actId] || {};
+            let act = (acts && acts[actId]) ? acts[actId] : {};
+            return Object.assign({}, def, act);
         }
-        return list;
+        let customs = (idleSettings && idleSettings.customActions && Array.isArray(idleSettings.customActions)) ? idleSettings.customActions : [];
+        for (let i = 0; i < customs.length; i++) {
+            if (customs[i] && customs[i].id === actId) {
+                return customs[i];
+            }
+        }
+        return null;
     }
 
     function getActionTimeout(act) {
@@ -143,7 +174,7 @@ Item {
     }
 
     function isActionPipelineValid(actionObj) {
-        if (!actionObj) return false;
+        if (!actionObj) return true;
         let id = (actionObj.id || "").toLowerCase();
         let builtInOrder = ["dim", "lock", "dpms", "suspend"];
         let idx = builtInOrder.indexOf(id);
@@ -164,18 +195,18 @@ Item {
         return true;
     }
 
-    function getActionTitle(act) {
-        if (!act) return "";
-        if (act.id === "dim") return I18n.t("guide.idle.dim.title", "Dim Screen");
-        if (act.id === "lock") return I18n.t("guide.idle.lock.title", "Lock Session");
-        if (act.id === "dpms") return I18n.t("guide.idle.dpms.title", "Display Off (DPMS)");
-        if (act.id === "suspend") return I18n.t("guide.idle.suspend.title", "System Suspend");
-        return act.name || I18n.t("guide.idle.custom_action_fallback");
+    function getActionTitle(act, actId) {
+        let id = actId || (act ? act.id : "");
+        if (id === "dim") return I18n.t("guide.idle.dim.title", "Dim Screen");
+        if (id === "lock") return I18n.t("guide.idle.lock.title", "Lock Session");
+        if (id === "dpms") return I18n.t("guide.idle.dpms.title", "Display Off (DPMS)");
+        if (id === "suspend") return I18n.t("guide.idle.suspend.title", "System Suspend");
+        return (act && act.name) ? act.name : I18n.t("guide.idle.custom_action_fallback", "Custom Action");
     }
 
     function getDefaultResumeCommand(actId) {
         if (actId === "dpms") return idleTabRoot.isNiri ? "niri msg action power-on-monitors" : "hyprctl dispatch 'hl.dsp.dpms({ action = \"enable\" })' || hyprctl dispatch dpms on";
-        return I18n.t("guide.idle.resume_command.placeholder");
+        return I18n.t("guide.idle.resume_command.placeholder", "Resume command");
     }
 
     function saveCustomAction(actionObj) {
@@ -185,9 +216,9 @@ Item {
         actionObj.isCustom = true;
 
         let current = JSON.parse(JSON.stringify(Config.getSetting("idle", defaultIdleSettings) || defaultIdleSettings));
-        if (!current.customActions) current.customActions = [];
+        if (!current.customActions || !Array.isArray(current.customActions)) current.customActions = [];
         let customs = current.customActions;
-        let idx = customs.findIndex(a => a.id === sanitizeId);
+        let idx = customs.findIndex(a => a && a.id === sanitizeId);
         if (idx !== -1) {
             customs[idx] = actionObj;
         } else {
@@ -195,20 +226,22 @@ Item {
         }
         current.customActions = customs;
         Config.setSetting("idle", current);
+        idleTabRoot.refreshActionIds();
     }
 
     function deleteCustomAction(actionId) {
         let current = JSON.parse(JSON.stringify(Config.getSetting("idle", defaultIdleSettings) || defaultIdleSettings));
-        if (!current.customActions) return;
-        current.customActions = current.customActions.filter(a => a.id !== actionId);
+        if (!current.customActions || !Array.isArray(current.customActions)) return;
+        current.customActions = current.customActions.filter(a => a && a.id !== actionId);
         Config.setSetting("idle", current);
+        idleTabRoot.refreshActionIds();
     }
 
     function createNewAction() {
         let newId = "custom_" + Date.now();
         let newAction = {
             "id": newId,
-            "name": I18n.t("guide.idle.custom_action_default"),
+            "name": I18n.t("guide.idle.custom_action_default", "New Action"),
             "desc": "",
             "timeout": 300,
             "enabled": true,
@@ -229,8 +262,8 @@ Item {
         let current = JSON.parse(JSON.stringify(Config.getSetting("idle", defaultIdleSettings) || defaultIdleSettings));
 
         if (isCustom) {
-            let customs = current.customActions ? current.customActions : [];
-            let found = customs.find(a => a.id === actionId);
+            let customs = (current.customActions && Array.isArray(current.customActions)) ? current.customActions : [];
+            let found = customs.find(a => a && a.id === actionId);
             if (found) {
                 found[propKey] = value;
                 current.customActions = customs;
@@ -250,27 +283,10 @@ Item {
         Config.setSetting("idle", current);
     }
 
-    Timer {
-        id: debounceTimer
-        interval: 250
-        repeat: false
-        property var pendingCallback: null
-        onTriggered: {
-            if (pendingCallback) {
-                pendingCallback();
-                pendingCallback = null;
-            }
-        }
-    }
-
-    function triggerDebounced(cb) {
-        debounceTimer.pendingCallback = cb;
-        debounceTimer.restart();
-    }
-
     Component.onCompleted: {
         let de = (typeof SystemInfo !== "undefined" && SystemInfo.desktopEnv) ? SystemInfo.desktopEnv.toLowerCase() : "";
         idleTabRoot.isNiri = de.indexOf("niri") !== -1;
+        idleTabRoot.refreshActionIds();
     }
 
     Component {
@@ -287,20 +303,40 @@ Item {
             border.color: isPipelineValid ? Qt.alpha(ThemeBackend.surface1, 0.4) : Qt.alpha(ThemeBackend.red, 0.6)
             border.width: 1
 
-            property string actId: modelData ? (modelData.id || "") : ""
-            property bool isExpanded: !idleTabRoot.expandedActionMap[actId]
-            property bool isCustomAct: modelData ? (modelData.isCustom === true) : false
-            property bool actEnabled: modelData ? (modelData.enabled !== undefined ? modelData.enabled : true) : true
-            property int actTimeout: idleTabRoot.getActionTimeout(modelData)
-            property int actWarningTimeout: modelData && modelData.warningTimeout !== undefined && modelData.warningTimeout !== null ? Math.max(0, Number(modelData.warningTimeout)) : 0
-            property bool actRespectInhibitors: modelData ? (modelData.respectInhibitors !== undefined ? modelData.respectInhibitors : true) : true
-            property bool actMprisInhibit: modelData ? (modelData.mprisInhibit !== undefined ? modelData.mprisInhibit : false) : false
-            property string actCmd: modelData ? (modelData.command || "") : ""
-            property string actWarningCmd: modelData ? (modelData.warningCommand || "") : ""
-            property string actBeforeCmd: modelData ? (modelData.beforeCommand || "") : ""
-            property string actResumeCmd: modelData ? (modelData.resumeCommand || "") : ""
-            property string actTitle: idleTabRoot.getActionTitle(modelData)
-            property bool isPipelineValid: idleTabRoot.isActionPipelineValid(modelData)
+            property string actId: typeof modelData === "string" ? modelData : (modelData ? (modelData.id || "") : "")
+            property bool isCustomAct: idleTabRoot.isCustomAction(actId)
+            property var actData: idleTabRoot.getActionData(actId)
+
+            property bool isExpanded: !!idleTabRoot.expandedActionMap[actId]
+            property bool actEnabled: actData && actData.enabled !== undefined ? actData.enabled : true
+            property int actTimeout: idleTabRoot.getActionTimeout(actData)
+            property int actWarningTimeout: actData && actData.warningTimeout !== undefined && actData.warningTimeout !== null ? Math.max(0, Number(actData.warningTimeout)) : 0
+            property bool actRespectInhibitors: actData && actData.respectInhibitors !== undefined ? actData.respectInhibitors : true
+            property bool actMprisInhibit: actData && actData.mprisInhibit !== undefined ? actData.mprisInhibit : false
+            property string actCmd: actData ? (actData.command || "") : ""
+            property string actWarningCmd: actData ? (actData.warningCommand || "") : ""
+            property string actBeforeCmd: actData ? (actData.beforeCommand || "") : ""
+            property string actResumeCmd: actData ? (actData.resumeCommand || "") : ""
+            property string actTitle: idleTabRoot.getActionTitle(actData, actId)
+            property bool isPipelineValid: idleTabRoot.isActionPipelineValid(actData)
+
+            Timer {
+                id: cardDebounceTimer
+                interval: 200
+                repeat: false
+                property var callback: null
+                onTriggered: {
+                    if (callback) {
+                        callback();
+                        callback = null;
+                    }
+                }
+            }
+
+            function debounceAction(cb) {
+                cardDebounceTimer.callback = cb;
+                cardDebounceTimer.restart();
+            }
 
             ColumnLayout {
                 id: cardMainCol
@@ -315,84 +351,77 @@ Item {
                     Layout.fillWidth: true
                     spacing: rootObj.s(8)
 
-                    Loader {
-                        active: !actionCard.isCustomAct
-                        visible: active
+                    RowLayout {
+                        visible: !actionCard.isCustomAct
                         Layout.preferredWidth: rootObj.s(160)
                         Layout.alignment: Qt.AlignVCenter
-                        sourceComponent: RowLayout {
-                            spacing: rootObj.s(6)
-                            Text {
-                                text: actionCard.actTitle
-                                font.family: ThemeBackend.fontFamily
-                                font.pixelSize: rootObj.s(13)
-                                color: ThemeBackend.text
-                                elide: Text.ElideRight
-                            }
-                            Rectangle {
-                                visible: !actionCard.isPipelineValid && actionCard.actEnabled
-                                implicitWidth: invalidBadgeText.implicitWidth + rootObj.s(8)
-                                implicitHeight: rootObj.s(18)
-                                radius: rootObj.s(4)
-                                color: Qt.alpha(ThemeBackend.red, 0.15)
-                                border.color: Qt.alpha(ThemeBackend.red, 0.4)
-                                border.width: 1
+                        spacing: rootObj.s(6)
 
-                                Text {
-                                    id: invalidBadgeText
-                                    anchors.centerIn: parent
-                                    text: I18n.t("guide.idle.invalid_badge", "Order")
-                                    font.family: ThemeBackend.fontFamily
-                                    font.pixelSize: rootObj.s(10)
-                                    font.bold: true
-                                    color: ThemeBackend.red
-                                }
+                        Text {
+                            text: actionCard.actTitle
+                            font.family: ThemeBackend.fontFamily
+                            font.pixelSize: rootObj.s(13)
+                            color: ThemeBackend.text
+                            elide: Text.ElideRight
+                        }
+
+                        Rectangle {
+                            visible: !actionCard.isPipelineValid && actionCard.actEnabled
+                            implicitWidth: invalidBadgeText.implicitWidth + rootObj.s(8)
+                            implicitHeight: rootObj.s(18)
+                            radius: rootObj.s(4)
+                            color: Qt.alpha(ThemeBackend.red, 0.15)
+                            border.color: Qt.alpha(ThemeBackend.red, 0.4)
+                            border.width: 1
+
+                            Text {
+                                id: invalidBadgeText
+                                anchors.centerIn: parent
+                                text: I18n.t("guide.idle.invalid_badge", "Order")
+                                font.family: ThemeBackend.fontFamily
+                                font.pixelSize: rootObj.s(10)
+                                font.bold: true
+                                color: ThemeBackend.red
                             }
                         }
                     }
 
-                    Loader {
-                        active: actionCard.isCustomAct
-                        visible: active
+                    Input {
+                        visible: actionCard.isCustomAct
                         Layout.preferredWidth: rootObj.s(140)
                         Layout.alignment: Qt.AlignVCenter
-                        sourceComponent: Input {
-                            implicitWidth: rootObj.s(140)
-                            implicitHeight: rootObj.s(32)
-                            text: modelData.name || ""
-                            placeholderText: I18n.t("guide.idle.action_name_placeholder")
-                            fontPixelSize: rootObj.s(12)
-                            baseColor: ThemeBackend.surface0
-                            accentColor: ThemeBackend.mauve
-                            textColor: ThemeBackend.text
-                            borderColor: Qt.alpha(ThemeBackend.surface2, 0.6)
-                            cornerRadius: ThemeBackend.borderRadius
-                            onAccepted: function(t) {
-                                idleTabRoot.updateActionProp(actionCard.actId, true, "name", typeof t === "string" ? t : text);
-                            }
+                        implicitHeight: rootObj.s(32)
+                        text: (actionCard.actData && actionCard.actData.name) ? actionCard.actData.name : ""
+                        placeholderText: I18n.t("guide.idle.action_name_placeholder", "Action Name")
+                        fontPixelSize: rootObj.s(12)
+                        baseColor: ThemeBackend.surface0
+                        accentColor: ThemeBackend.mauve
+                        textColor: ThemeBackend.text
+                        borderColor: Qt.alpha(ThemeBackend.surface2, 0.6)
+                        cornerRadius: ThemeBackend.borderRadius
+                        onAccepted: function(t) {
+                            let val = (typeof t === "string") ? t : text;
+                            idleTabRoot.updateActionProp(actionCard.actId, true, "name", val);
                         }
                     }
 
-                    Loader {
-                        active: actionCard.isCustomAct
-                        visible: active
+                    Input {
+                        visible: actionCard.isCustomAct
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignVCenter
-                        sourceComponent: Input {
-                            implicitHeight: rootObj.s(32)
-                            text: actionCard.actCmd
-                            placeholderText: I18n.t("guide.idle.command_placeholder")
-                            baseColor: ThemeBackend.surface0
-                            accentColor: ThemeBackend.mauve
-                            textColor: ThemeBackend.text
-                            subTextColor: ThemeBackend.subtext0
-                            borderColor: Qt.alpha(ThemeBackend.surface2, 0.6)
-                            cornerRadius: ThemeBackend.borderRadius
-                            fontPixelSize: rootObj.s(11)
-                            onAccepted: function(t) {
-                                let val = (typeof t === "string") ? t : text;
-                                idleTabRoot.updateActionProp(actionCard.actId, true, "command", val);
-                            }
+                        implicitHeight: rootObj.s(32)
+                        text: actionCard.actCmd
+                        placeholderText: I18n.t("guide.idle.command_placeholder", "Command to run")
+                        baseColor: ThemeBackend.surface0
+                        accentColor: ThemeBackend.mauve
+                        textColor: ThemeBackend.text
+                        subTextColor: ThemeBackend.subtext0
+                        borderColor: Qt.alpha(ThemeBackend.surface2, 0.6)
+                        cornerRadius: ThemeBackend.borderRadius
+                        fontPixelSize: rootObj.s(11)
+                        onAccepted: function(t) {
+                            let val = (typeof t === "string") ? t : text;
+                            idleTabRoot.updateActionProp(actionCard.actId, true, "command", val);
                         }
                     }
 
@@ -424,8 +453,10 @@ Item {
                             let num = (typeof val === "number" && !isNaN(val)) ? val : value;
                             let rounded = Math.round(num);
                             if (!isNaN(rounded) && rounded >= 10 && rounded <= 7200 && actionCard.actTimeout !== rounded) {
-                                idleTabRoot.triggerDebounced(function() {
-                                    idleTabRoot.updateActionProp(actionCard.actId, actionCard.isCustomAct, "timeout", rounded);
+                                let targetId = actionCard.actId;
+                                let isCustom = actionCard.isCustomAct;
+                                actionCard.debounceAction(function() {
+                                    idleTabRoot.updateActionProp(targetId, isCustom, "timeout", rounded);
                                 });
                             }
                         }
@@ -653,7 +684,7 @@ Item {
                                         implicitWidth: rootObj.s(220)
                                         implicitHeight: rootObj.s(30)
                                         text: actionCard.actWarningCmd
-                                        placeholderText: I18n.t("guide.idle.warning_command.placeholder")
+                                        placeholderText: I18n.t("guide.idle.warning_command.placeholder", "Warning command")
                                         baseColor: ThemeBackend.surface0
                                         accentColor: ThemeBackend.mauve
                                         textColor: ThemeBackend.text
@@ -690,8 +721,10 @@ Item {
                                             let num = (typeof val === "number" && !isNaN(val)) ? val : value;
                                             let rounded = Math.max(0, Math.round(num));
                                             if (!isNaN(rounded) && actionCard.actWarningTimeout !== rounded) {
-                                                idleTabRoot.triggerDebounced(function() {
-                                                    idleTabRoot.updateActionProp(actionCard.actId, actionCard.isCustomAct, "warningTimeout", rounded);
+                                                let targetId = actionCard.actId;
+                                                let isCustom = actionCard.isCustomAct;
+                                                actionCard.debounceAction(function() {
+                                                    idleTabRoot.updateActionProp(targetId, isCustom, "warningTimeout", rounded);
                                                 });
                                             }
                                         }
@@ -748,7 +781,7 @@ Item {
                                     implicitWidth: rootObj.s(280)
                                     implicitHeight: rootObj.s(30)
                                     text: actionCard.actBeforeCmd
-                                    placeholderText: I18n.t("guide.idle.before_command.placeholder")
+                                    placeholderText: I18n.t("guide.idle.before_command.placeholder", "Before action command")
                                     baseColor: ThemeBackend.surface0
                                     accentColor: ThemeBackend.mauve
                                     textColor: ThemeBackend.text
@@ -958,7 +991,7 @@ Item {
                 visible: idleTabRoot.idleEnabled
 
                 Repeater {
-                    model: idleTabRoot.allActionList
+                    model: idleTabRoot.actionIdsList
                     delegate: actionCardDelegate
                 }
             }

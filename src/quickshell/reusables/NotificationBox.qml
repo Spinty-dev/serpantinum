@@ -28,10 +28,8 @@ Item {
     property real contentMargins: root.s(12)
     property string titleText: I18n.t("syspanel.notifications.title")
 
-    property bool dndEnabled: {
-        let n = Config.getSetting("notifications", { "dnd": false });
-        return Boolean(n && n.dnd);
-    }
+    property bool dndEnabled: Boolean(Config.rawSettings && Config.rawSettings.notifications && Config.rawSettings.notifications.dnd)
+    readonly property bool showEmptyGraphic: (Config.rawSettings && Config.rawSettings.notifications && Config.rawSettings.notifications.showEmptyGraphic !== undefined) ? Boolean(Config.rawSettings.notifications.showEmptyGraphic) : true
 
     property bool isClearingNotifs: false
 
@@ -212,19 +210,34 @@ Item {
                 spacing: root.s(8)
                 visible: !NotificationManager.groupedHistory || NotificationManager.groupedHistory.count === 0
 
-                ImageBox {
-                    id: pushyImg
+                Item {
                     Layout.alignment: Qt.AlignHCenter
-                    Layout.preferredWidth: root.emptyGraphicSize
-                    Layout.preferredHeight: root.emptyGraphicSize
-                    size: root.emptyGraphicSize
-                    cornerRadius: root.s(0)
-                    imageRadius: root.s(0)
-                    source: Caching.serpantinumDir ? ("file://" + Caching.serpantinumDir + "/assets/pushy.gif") : Qt.resolvedUrl("../../assets/pushy.gif")
-                    isGif: true
-                    playing: true
-                    fillMode: Image.PreserveAspectFit
-                    interactive: false
+                    Layout.preferredWidth: root.showEmptyGraphic ? root.emptyGraphicSize : root.s(48)
+                    Layout.preferredHeight: root.showEmptyGraphic ? root.emptyGraphicSize : root.s(48)
+                    visible: true
+
+                    ImageBox {
+                        id: pushyImg
+                        anchors.fill: parent
+                        size: root.emptyGraphicSize
+                        cornerRadius: root.s(0)
+                        imageRadius: root.s(0)
+                        source: Caching.serpantinumDir ? ("file://" + Caching.serpantinumDir + "/assets/pushy.gif") : Qt.resolvedUrl("../../assets/pushy.gif")
+                        isGif: true
+                        playing: true
+                        fillMode: Image.PreserveAspectFit
+                        interactive: false
+                        visible: root.showEmptyGraphic
+                    }
+
+                    Text {
+                        anchors.centerIn: parent
+                        visible: !root.showEmptyGraphic
+                        text: "󰂚"
+                        font.family: "Iosevka Nerd Font"
+                        font.pixelSize: root.s(40)
+                        color: ThemeBackend.surface2
+                    }
                 }
 
                 Text {

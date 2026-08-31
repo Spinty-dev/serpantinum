@@ -13,6 +13,13 @@ Item {
     property bool updateAvailable: false
     property string lastNotifiedVersion: ""
 
+    Connections {
+        target: typeof SystemInfo !== "undefined" ? SystemInfo : null
+        function onOsNameChanged() {
+            root.reevaluateUpdate();
+        }
+    }
+
     function parseVersion(v) {
         if (!v) return [0];
         let matches = v.match(/\d+/g);
@@ -34,6 +41,10 @@ Item {
     }
 
     function reevaluateUpdate() {
+        if (typeof SystemInfo !== "undefined" && SystemInfo.osName.toLowerCase().indexOf("nixos") !== -1) {
+            root.updateAvailable = false;
+            return;
+        }
         if (!root.remoteVersion) {
             root.updateAvailable = false;
             return;
@@ -79,6 +90,7 @@ Item {
     }
 
     function checkUpdate() {
+        if (typeof SystemInfo !== "undefined" && SystemInfo.osName.toLowerCase().indexOf("nixos") !== -1) return;
         if (typeof Caching === "undefined" || !Caching.serpantinumDir) return;
         if (updateProc.running) return;
         root.isChecking = true;
@@ -86,6 +98,7 @@ Item {
     }
 
     function scheduleInitialCheck() {
+        if (typeof SystemInfo !== "undefined" && SystemInfo.osName.toLowerCase().indexOf("nixos") !== -1) return;
         if (typeof Caching === "undefined" || !Caching.serpantinumDir) return;
         if (checkDelayProc.running) return;
         checkDelayProc.running = true;

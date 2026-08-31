@@ -1,6 +1,7 @@
 pragma Singleton
 import QtQuick
 import Quickshell
+import Quickshell.Hyprland
 import "../../"
 
 Item {
@@ -9,9 +10,40 @@ Item {
     property bool isVisible: false
     property var screen: null
 
+    function getFocusedScreen() {
+        try {
+            if (typeof Hyprland !== "undefined") {
+                let monName = "";
+                if (Hyprland.focusedMonitor && Hyprland.focusedMonitor.name) {
+                    monName = Hyprland.focusedMonitor.name;
+                } else if (Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.monitor && Hyprland.focusedWorkspace.monitor.name) {
+                    monName = Hyprland.focusedWorkspace.monitor.name;
+                }
+
+                if (monName && typeof Quickshell !== "undefined" && Quickshell.screens) {
+                    for (let i = 0; i < Quickshell.screens.length; i++) {
+                        if (Quickshell.screens[i].name === monName) {
+                            return Quickshell.screens[i];
+                        }
+                    }
+                }
+            }
+        } catch (e) {}
+        return null;
+    }
+
     function getScreen(scr) {
-        if (scr === undefined || scr === null) return null;
-        if (typeof scr === "object") return scr;
+        if (scr === undefined || scr === null) return getFocusedScreen();
+        if (typeof scr === "object") {
+            if (typeof Quickshell !== "undefined" && Quickshell.screens) {
+                for (let i = 0; i < Quickshell.screens.length; i++) {
+                    if (Quickshell.screens[i] === scr || Quickshell.screens[i].name === scr.name) {
+                        return Quickshell.screens[i];
+                    }
+                }
+            }
+            return scr;
+        }
         if (typeof Quickshell !== "undefined" && Quickshell.screens) {
             if (typeof scr === "number") {
                 if (scr >= 0 && scr < Quickshell.screens.length) {
@@ -26,15 +58,18 @@ Item {
                 }
             }
         }
-        return scr;
+        return getFocusedScreen() || scr;
     }
 
     function show(scr) {
         let target = getScreen(scr);
         if (target !== null && target !== undefined) {
             controller.screen = target;
-        } else if (scr !== undefined && scr !== null) {
-            controller.screen = scr;
+        } else {
+            let focused = getFocusedScreen();
+            if (focused !== null && focused !== undefined) {
+                controller.screen = focused;
+            }
         }
         controller.isVisible = true;
     }
@@ -45,7 +80,7 @@ Item {
 
     function toggle(scr) {
         let target = getScreen(scr);
-        let resolved = target !== null ? target : scr;
+        let resolved = target !== null && target !== undefined ? target : getFocusedScreen();
 
         if (controller.isVisible) {
             if (resolved !== undefined && resolved !== null && controller.screen !== resolved) {

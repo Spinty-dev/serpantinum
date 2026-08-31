@@ -1,11 +1,13 @@
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/ilyamiro)
 
 <div align="center">
-  <img src="docs/assets/banner.png" alt="Serpantinum" width="550" />
+  <a href="https://ko-fi.com/ilyamiro">
+    <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="ko-fi" />
+  </a>
 </div>
 
-> [!IMPORTANT]
-> **Migrating from v1:** All previous configuration will be backed up and unused. Configuration of compositor settings such as monitors, keybinds, and autostart is now up to you, as the project migrated from being dotfiles to being a shell.
+<div align="center">
+  <img src="docs/assets/banner.png" alt="Serpantinum" width="850" />
+</div>
 
 ## Previews
 
@@ -17,6 +19,9 @@
 ---
 
 ## Installation
+
+> [!IMPORTANT]
+> **Migrating from v1:** All previous configuration will be backed up and unused. Configuration of compositor settings such as monitors, keybinds, and autostart is now up to you, as the project migrated from being dotfiles to being a shell.
 
 ### Arch Linux and its derivatives
 
@@ -106,7 +111,7 @@ If you prefer installing the package directly without the system module:
 
       bar = {
         position = "top";
-        style = "islands";
+        style = "solid";
         width = 40;
         workspaceCount = 10;
         modules = {
@@ -142,6 +147,10 @@ Ensure your compositor config launches the daemon or shell binary on startup:
 serpantinumd start
 
 ```
+
+## Credits
+
+- Special thanks to Darkall44/Qylock for providing a gorgeous material SDDM theme!
 
 ---
 

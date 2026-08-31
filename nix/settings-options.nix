@@ -28,7 +28,7 @@ let
     position = mkOpt (types.enum [ "left" "right" "top" "bottom" ]) "Which screen edge the bar docks to.";
     width = mkOpt types.ints.positive "Bar thickness in pixels.";
     opacity = mkOpt (types.ints.between 0 100) "Bar background opacity, 0-100.";
-    style = mkOpt (types.enum [ "solid" "islands" ]) "Bar visual style.";
+    style = mkOpt (types.enum [ "solid" "fill" "modular" ]) "Bar visual style.";
     autohide = mkOpt types.bool "Auto-hide the bar when not in use.";
     autohideTimeout = mkOpt types.ints.positive "Milliseconds of inactivity before the bar autohides.";
     workspaceCount = mkOpt types.ints.positive "Number of workspace indicators to show.";

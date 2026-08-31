@@ -52,10 +52,10 @@ PanelWindow {
                     LauncherController.hide();
                 } else if (cmd === "open") {
                     ClipboardController.hide();
-                    LauncherController.show(masterWindow.screen);
+                    LauncherController.show();
                 } else {
                     ClipboardController.hide();
-                    LauncherController.toggle(masterWindow.screen);
+                    LauncherController.toggle();
                 }
                 return;
             }
@@ -65,10 +65,10 @@ PanelWindow {
                     ClipboardController.hide();
                 } else if (cmd === "open") {
                     LauncherController.hide();
-                    ClipboardController.show(masterWindow.screen);
+                    ClipboardController.show();
                 } else {
                     LauncherController.hide();
-                    ClipboardController.toggle(masterWindow.screen);
+                    ClipboardController.toggle();
                 }
                 return;
             }
