@@ -47,17 +47,13 @@ Item {
 
         Rectangle {
             id: activeTabHighlight
-            property int prevIdx: root.currentIndex
+            property int prevIdx: 0
             property int curIdx: root.currentIndex
-            property bool isAnimating: false
 
             onCurIdxChanged: {
-                if (curIdx !== prevIdx) {
-                    isAnimating = true;
-                    if (curIdx > prevIdx) { rightAnim.duration = 200; leftAnim.duration = 350; }
-                    else if (curIdx < prevIdx) { leftAnim.duration = 200; rightAnim.duration = 350; }
-                    prevIdx = curIdx;
-                }
+                if (curIdx > prevIdx) { rightAnim.duration = 200; leftAnim.duration = 350; }
+                else if (curIdx < prevIdx) { leftAnim.duration = 200; rightAnim.duration = 350; }
+                prevIdx = curIdx;
             }
 
             property real itemWidth: bgShape.width / Math.max(1, root.options.length)
@@ -67,32 +63,8 @@ Item {
             property real actualLeft: targetLeft
             property real actualRight: targetRight
 
-            Behavior on actualLeft {
-                enabled: activeTabHighlight.isAnimating
-                NumberAnimation {
-                    id: leftAnim
-                    duration: 250
-                    easing.type: Easing.OutExpo
-                    onRunningChanged: {
-                        if (!running && (!rightAnim || !rightAnim.running)) {
-                            activeTabHighlight.isAnimating = false;
-                        }
-                    }
-                }
-            }
-            Behavior on actualRight {
-                enabled: activeTabHighlight.isAnimating
-                NumberAnimation {
-                    id: rightAnim
-                    duration: 250
-                    easing.type: Easing.OutExpo
-                    onRunningChanged: {
-                        if (!running && (!leftAnim || !leftAnim.running)) {
-                            activeTabHighlight.isAnimating = false;
-                        }
-                    }
-                }
-            }
+            Behavior on actualLeft { NumberAnimation { id: leftAnim; duration: 250; easing.type: Easing.OutExpo } }
+            Behavior on actualRight { NumberAnimation { id: rightAnim; duration: 250; easing.type: Easing.OutExpo } }
 
             y: 0
             height: bgShape.height
