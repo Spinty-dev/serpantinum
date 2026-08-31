@@ -141,7 +141,7 @@ Item {
             if (ws > 0) rules += "workspace " + ws + " ";
             if (isSilent) rules += "silent ";
             rules = rules.trim() + "]";
-            finalExec = "hyprctl dispatch exec \\\"" + rules + " " + execCmd + "\\\"";
+            finalExec = "hyprctl dispatch 'hl.dsp.exec_cmd(\\\"" + rules + " " + execCmd + "\\\")' 2>/dev/null || hyprctl dispatch exec \\\"" + rules + " " + execCmd + "\\\"";
         }
 
         let script = "";

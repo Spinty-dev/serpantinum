@@ -10,8 +10,34 @@ source "$SCRIPT_DIR/caching.sh" 2>/dev/null || true
 source "$SCRIPT_DIR/config.sh" 2>/dev/null || true
 source "$SCRIPT_DIR/i18n.sh" 2>/dev/null || true
 
+show_help() {
+    echo "Usage: serpantinum autostart [OPTIONS]"
+    echo ""
+    echo "Execute user-configured autostart applications and background services."
+    echo ""
+    echo "Options:"
+    echo "  -v, --verbose    Enable verbose logging"
+    echo "  -h, --help       Show this help message"
+}
+
 VERBOSE=false
-if [ "$1" = "-v" ] || [ "$1" = "--verbose" ] || [ "$SERPANTINUM_VERBOSE" = true ]; then
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -v|--verbose)
+            VERBOSE=true
+            shift
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+if [ "$SERPANTINUM_VERBOSE" = true ]; then
     VERBOSE=true
 fi
 
@@ -61,8 +87,10 @@ check_condition() {
             ;;
         "multi_monitor")
             local mon_count=0
-            if command -v hyprctl &>/dev/null; then
-                mon_count="$(hyprctl monitors -j 2>/dev/null | jq 'length' 2>/dev/null || echo 1)"
+            if [ -f "$SCRIPT_DIR/monitors_detect.sh" ]; then
+                mon_count="$(bash "$SCRIPT_DIR/monitors_detect.sh" 2>/dev/null | grep -c . || echo 0)"
+            elif command -v serpantinum &>/dev/null; then
+                mon_count="$(serpantinum monitors_detect 2>/dev/null | grep -c . || echo 0)"
             fi
             (( mon_count > 1 )) && return 0
             return 1
@@ -83,12 +111,12 @@ run_task() {
     local id="$1" exec_cmd="$2" restart="$3" ws="$4" silent="$5"
     local final_cmd="$exec_cmd"
 
-    if [ -n "$HYPRLAND_INSTANCE_SIGNATURE" ] && command -v hyprctl &>/dev/null && { [ -n "$ws" ] || [ "$silent" = "true" ]; }; then
+    if [ -n "$HYPRLAND_INSTANCE_SIGNATURE" ] && command -v hyprctl &>/dev/null && { { [ -n "$ws" ] && [ "$ws" != "0" ]; } || [ "$silent" = "true" ]; }; then
         local rules="["
-        [ -n "$ws" ] && rules+="workspace $ws "
+        [ -n "$ws" ] && [ "$ws" != "0" ] && rules+="workspace $ws "
         [ "$silent" = "true" ] && rules+="silent "
         rules="${rules% }]"
-        final_cmd="hyprctl dispatch exec \"$rules $exec_cmd\""
+        final_cmd="hyprctl dispatch 'hl.dsp.exec_cmd(\"$rules $exec_cmd\")' 2>/dev/null || hyprctl dispatch exec \"$rules $exec_cmd\""
     fi
 
     write_status "$id" "running" 0
@@ -128,7 +156,8 @@ for ((i = 0; i < entries_count; i++)); do
     entry_exec="$(printf '%s' "$entry" | jq -r '.exec // empty')"
     [ -z "$entry_exec" ] && continue
 
-    entry_id="$(printf '%s' "$entry" | jq -r '.id // "auto_entry_\(idx)"')"
+    entry_id="$(printf '%s' "$entry" | jq -r '.id // empty')"
+    entry_id="${entry_id:-auto_entry_$i}"
     entry_name="$(printf '%s' "$entry" | jq -r '.name // empty')"
     entry_delay="$(printf '%s' "$entry" | jq -r '.delay // 0')"
     entry_count="$(printf '%s' "$entry" | jq -r '.count // 1')"
