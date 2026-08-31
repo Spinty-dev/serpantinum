@@ -49,6 +49,8 @@ Item {
     property string logModalStatus: ""
     property int logModalExitCode: 0
 
+    readonly property string autostartRunDir: ((typeof Caching !== "undefined" && Caching.runDir) ? Caching.runDir : ((Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/serpantinum")) + "/autostart"
+
     function toggleCollapsed(entryId) {
         if (!entryId) return;
         let map = Object.assign({}, autostartTabRoot.collapsedEntriesMap);
@@ -68,51 +70,45 @@ Item {
         }
     }
 
-    function updateEntrySilent(index, key, value) {
-        if (!autostartTabRoot.autostartSettings) {
-            autostartTabRoot.autostartSettings = JSON.parse(JSON.stringify(defaultAutostartSettings));
-        }
-        if (Array.isArray(autostartTabRoot.autostartSettings.entries) && index >= 0 && index < autostartTabRoot.autostartSettings.entries.length) {
-            autostartTabRoot.autostartSettings.entries[index][key] = value;
-            debounceTimer.restart();
-        }
-    }
-
-    function flushEntry(index, key, value) {
-        if (!autostartTabRoot.autostartSettings) {
-            autostartTabRoot.autostartSettings = JSON.parse(JSON.stringify(defaultAutostartSettings));
-        }
-        if (Array.isArray(autostartTabRoot.autostartSettings.entries) && index >= 0 && index < autostartTabRoot.autostartSettings.entries.length) {
-            autostartTabRoot.autostartSettings.entries[index][key] = value;
-            debounceTimer.stop();
-            Config.setSetting("autostart", autostartTabRoot.autostartSettings);
-        }
-    }
-
-    function toggleMasterEnabled(enabled) {
+    function updateEntrySilent(index, key, val) {
         let current = JSON.parse(JSON.stringify(autostartSettings || defaultAutostartSettings));
-        current.enabled = enabled;
+        if (!Array.isArray(current.entries) || index < 0 || index >= current.entries.length) return;
+        current.entries[index][key] = val;
         autostartTabRoot.autostartSettings = current;
-        autostartTabRoot.masterEnabled = enabled;
+        debounceTimer.restart();
+    }
+
+    function flushEntry(index, key, val) {
+        let current = JSON.parse(JSON.stringify(autostartSettings || defaultAutostartSettings));
+        if (!Array.isArray(current.entries) || index < 0 || index >= current.entries.length) return;
+        current.entries[index][key] = val;
+        autostartTabRoot.autostartSettings = current;
+        Config.setSetting("autostart", current);
+    }
+
+    function toggleMasterEnabled(val) {
+        let current = JSON.parse(JSON.stringify(autostartSettings || defaultAutostartSettings));
+        current.enabled = val;
+        autostartTabRoot.masterEnabled = val;
+        autostartTabRoot.autostartSettings = current;
         Config.setSetting("autostart", current);
     }
 
     function addEntry() {
         let current = JSON.parse(JSON.stringify(autostartSettings || defaultAutostartSettings));
         if (!Array.isArray(current.entries)) current.entries = [];
-        
         let newEntry = {
-            "id": "auto_" + Date.now(),
+            "id": "auto_" + Date.now().toString(36) + Math.random().toString(36).substr(2, 4),
             "name": "",
             "exec": "",
+            "enabled": true,
             "delay": 0,
             "count": 1,
             "repeatDelay": 0,
             "workspace": 0,
             "silent": false,
             "condition": "always",
-            "restartOnCrash": false,
-            "enabled": true
+            "restartOnCrash": false
         };
         current.entries.push(newEntry);
         autostartTabRoot.autostartSettings = current;
@@ -170,12 +166,23 @@ Item {
         let baseLower = base.toLowerCase();
 
         if (baseLower.endsWith(".sh") || baseLower.endsWith(".bash") || baseLower.endsWith(".zsh") || baseLower.endsWith(".py")) {
-            return { isIcon: false, icon: "", fontIcon: "󱆃", isScript: true };
+            return { isIcon: false, icon: "", fontIcon: "󰆍", isScript: true };
         }
 
-        let iconName = base.replace(/\.(desktop|bin|exe)$/i, "");
-        if (iconName === "" && name !== "") {
-            iconName = name.replace(/\s+/g, "-");
+        let iconName = "";
+        if (typeof DesktopEntries !== "undefined" && DesktopEntries.applications) {
+            for (let app of DesktopEntries.applications) {
+                if (!app) continue;
+                let appExec = (app.exec || "").toLowerCase();
+                let appName = (app.name || "").toLowerCase();
+                let appId = (app.id || "").toLowerCase();
+                if (appExec.includes(baseLower) || appName === name.toLowerCase() || appId.includes(baseLower)) {
+                    if (app.icon) {
+                        iconName = app.icon;
+                        break;
+                    }
+                }
+            }
         }
 
         return { isIcon: iconName !== "", icon: iconName, fontIcon: "󰑮", isScript: false };
@@ -187,7 +194,7 @@ Item {
         logModalStatus = statusObj.status || "idle";
         logModalExitCode = statusObj.exitCode || 0;
 
-        let logPath = "/run/user/1000/serpantinum/autostart/" + entryId + ".log";
+        let logPath = autostartTabRoot.autostartRunDir + "/" + entryId + ".log";
         logReaderProc.targetEntryId = entryId;
         logReaderProc.running = false;
         logReaderProc.command = ["bash", "-c", "if [ -f '" + logPath + "' ]; then cat '" + logPath + "'; else echo '(No log output captured yet)'; fi"];
@@ -207,7 +214,7 @@ Item {
 
     Process {
         id: statusReaderProc
-        command: ["bash", "-c", "cd /run/user/1000/serpantinum/autostart 2>/dev/null && for f in *.json; do [ -f \"$f\" ] && echo -n \"${f%.json}:\" && cat \"$f\" && echo \"\"; done || true"]
+        command: ["bash", "-c", "cd \"" + autostartTabRoot.autostartRunDir + "\" 2>/dev/null && for f in *.json; do [ -f \"$f\" ] && echo -n \"${f%.json}:\" && cat \"$f\" && echo \"\"; done || true"]
         stdout: SplitParser {
             splitMarker: "\n"
             onRead: data => {
@@ -367,7 +374,6 @@ Item {
                 Layout.bottomMargin: rootObj.s(2)
 
                 ColumnLayout {
-                    Layout.fillWidth: true
                     spacing: rootObj.s(2)
 
                     Text {
@@ -385,6 +391,8 @@ Item {
                         color: ThemeBackend.subtext0
                     }
                 }
+
+                Item { Layout.fillWidth: true }
 
                 ClickButton {
                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
@@ -454,99 +462,95 @@ Item {
                     required property var modelData
                     required property int index
 
-                    Layout.fillWidth: true
-                    radius: ThemeBackend.borderRadius
-                    color: Qt.alpha(ThemeBackend.surface0, 0.4)
-                    border.color: entryEnabled ? (statusInfo.status === "failed" ? Qt.alpha(ThemeBackend.red, 0.6) : Qt.alpha(ThemeBackend.surface1, 0.5)) : Qt.alpha(ThemeBackend.surface0, 0.6)
-                    border.width: 1
+                    property string entryId: modelData.id || ("auto_entry_" + index)
+                    property string entryName: modelData.name || ""
+                    property string entryExec: modelData.exec || ""
+                    property bool entryEnabled: modelData.enabled !== undefined ? modelData.enabled : true
+                    property int entryDelay: modelData.delay || 0
+                    property int entryCount: modelData.count || 1
+                    property int entryRepeatDelay: modelData.repeatDelay || modelData.repeat_delay || modelData.interval || 0
+                    property int entryWorkspace: modelData.workspace || 0
+                    property bool entrySilent: modelData.silent || false
+                    property string entryCondition: modelData.condition || "always"
+                    property bool entryRestart: modelData.restartOnCrash || false
 
-                    property string entryId: modelData ? (modelData.id || "") : ""
-                    property string entryName: modelData ? (modelData.name || "") : ""
-                    property string entryExec: modelData ? (modelData.exec || "") : ""
-                    property int entryDelay: modelData && modelData.delay !== undefined ? Number(modelData.delay) : 0
-                    property int entryCount: modelData && modelData.count !== undefined ? Number(modelData.count) : 1
-                    property int entryRepeatDelay: modelData && modelData.repeatDelay !== undefined ? Number(modelData.repeatDelay) : 0
-                    property int entryWorkspace: modelData && modelData.workspace !== undefined ? Number(modelData.workspace) : 0
-                    property bool entrySilent: modelData && modelData.silent !== undefined ? modelData.silent : false
-                    property string entryCondition: modelData && modelData.condition !== undefined ? modelData.condition : "always"
-                    property bool entryRestart: modelData && modelData.restartOnCrash !== undefined ? modelData.restartOnCrash : false
-                    property bool entryEnabled: modelData && modelData.enabled !== undefined ? modelData.enabled : true
+                    property bool isExpanded: autostartTabRoot.collapsedEntriesMap[entryId] === true
+                    property var statusInfo: autostartTabRoot.liveStatusMap[entryId] || ({ "status": "idle", "exitCode": 0 })
                     property bool isTestRunning: false
-                    property bool isExpanded: !autostartTabRoot.collapsedEntriesMap[entryCard.entryId]
-
-                    property var statusInfo: autostartTabRoot.liveStatusMap[entryCard.entryId] || { status: "idle", exitCode: 0 }
-                    property var iconInfo: autostartTabRoot.resolveAppIcon(entryCard.entryExec, entryCard.entryName)
-
-                    implicitHeight: entryCardCol.implicitHeight + rootObj.s(24)
 
                     Timer {
                         id: testFeedbackTimer
-                        interval: Math.max(1000, (entryCard.entryDelay + (entryCard.entryCount > 1 ? (entryCard.entryCount - 1) * entryCard.entryRepeatDelay : 0)) * 1000)
+                        interval: 1200
                         repeat: false
-                        onTriggered: {
-                            entryCard.isTestRunning = false;
-                        }
+                        onTriggered: entryCard.isTestRunning = false
                     }
 
+                    Layout.fillWidth: true
+                    implicitHeight: cardInnerLayout.implicitHeight + rootObj.s(20)
+                    radius: ThemeBackend.borderRadius
+                    color: Qt.alpha(ThemeBackend.surface0, 0.4)
+                    border.color: entryCard.isExpanded ? Qt.alpha(ThemeBackend.mauve, 0.5) : Qt.alpha(ThemeBackend.surface1, 0.5)
+                    border.width: 1
+
+                    Behavior on border.color { ColorAnimation { duration: 200 } }
+                    Behavior on implicitHeight { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
+
                     ColumnLayout {
-                        id: entryCardCol
+                        id: cardInnerLayout
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
-                        anchors.margins: rootObj.s(12)
-                        spacing: rootObj.s(10)
+                        anchors.margins: rootObj.s(10)
+                        spacing: rootObj.s(8)
 
-                        // Card Header Row
+                        // Top Row: App Icon + Name / Command + Status Badge + Quick Actions
                         RowLayout {
-                            id: headerRowLayout
                             Layout.fillWidth: true
                             spacing: rootObj.s(10)
 
-                            // App / Script Icon Container
-                            Rectangle {
-                                Layout.preferredWidth: rootObj.s(32)
-                                Layout.preferredHeight: rootObj.s(32)
+                            // App Icon Box
+                            Item {
+                                Layout.preferredWidth: rootObj.s(34)
+                                Layout.preferredHeight: rootObj.s(34)
                                 Layout.alignment: Qt.AlignVCenter
-                                radius: rootObj.s(8)
-                                color: entryCard.entryEnabled ? Qt.alpha(ThemeBackend.mauve, 0.15) : Qt.alpha(ThemeBackend.surface1, 0.3)
 
-                                Image {
-                                    id: headerAppIconImg
-                                    anchors.centerIn: parent
-                                    width: rootObj.s(20)
-                                    height: rootObj.s(20)
-                                    source: entryCard.iconInfo.isIcon ? (entryCard.iconInfo.icon.startsWith("/") ? ("file://" + entryCard.iconInfo.icon) : ("image://icon/" + entryCard.iconInfo.icon)) : ""
-                                    sourceSize: Qt.size(48, 48)
-                                    fillMode: Image.PreserveAspectFit
-                                    asynchronous: true
-                                    smooth: true
-                                    visible: status === Image.Ready && entryCard.iconInfo.isIcon
-                                }
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: rootObj.s(6)
+                                    color: Qt.alpha(ThemeBackend.surface1, 0.6)
 
-                                Text {
-                                    anchors.centerIn: parent
-                                    visible: !headerAppIconImg.visible
-                                    text: entryCard.iconInfo.fontIcon !== "" ? entryCard.iconInfo.fontIcon : "󰑮"
-                                    font.family: ThemeBackend.fontFamily
-                                    font.pixelSize: rootObj.s(16)
-                                    color: entryCard.entryEnabled ? ThemeBackend.mauve : ThemeBackend.subtext0
+                                    property var iconInfo: autostartTabRoot.resolveAppIcon(entryCard.entryExec, entryCard.entryName)
+
+                                    IconImage {
+                                        anchors.fill: parent
+                                        anchors.margins: rootObj.s(5)
+                                        source: parent.iconInfo.isIcon ? (parent.iconInfo.icon.startsWith("/") ? ("file://" + parent.iconInfo.icon) : ("image://icon/" + parent.iconInfo.icon)) : ""
+                                        visible: parent.iconInfo.isIcon
+                                    }
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        visible: !parent.iconInfo.isIcon
+                                        text: parent.iconInfo.fontIcon
+                                        font.family: ThemeBackend.fontFamily
+                                        font.pixelSize: rootObj.s(16)
+                                        color: parent.iconInfo.isScript ? ThemeBackend.yellow : ThemeBackend.mauve
+                                    }
                                 }
                             }
 
+                            // Summary Info (Clickable to expand)
                             Item {
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: titleCol.implicitHeight
+                                Layout.preferredHeight: rootObj.s(34)
 
                                 ColumnLayout {
-                                    id: titleCol
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.fill: parent
                                     spacing: rootObj.s(2)
 
                                     RowLayout {
-                                        spacing: rootObj.s(6)
                                         Layout.fillWidth: true
+                                        spacing: rootObj.s(8)
 
                                         Text {
                                             text: entryCard.entryName.trim() !== "" ? entryCard.entryName : (entryCard.entryExec.trim() !== "" ? entryCard.entryExec : ("#" + (index + 1) + " Application"))
@@ -832,12 +836,10 @@ Item {
                                     }
                                 }
 
-                                // Section 2: Timing & Repetition (Startup Delay, Count, Repeat Interval)
-                                GridLayout {
+                                // Section 2: Timing, Repetition & Workspace (All in ONE single line as requested)
+                                RowLayout {
                                     Layout.fillWidth: true
-                                    columns: entryCard.entryCount > 1 ? 3 : 2
-                                    rowSpacing: rootObj.s(8)
-                                    columnSpacing: rootObj.s(10)
+                                    spacing: rootObj.s(10)
 
                                     // Startup Delay
                                     ColumnLayout {
@@ -918,6 +920,47 @@ Item {
                                         }
                                     }
 
+                                    // Workspace Selection
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: rootObj.s(4)
+
+                                        Text {
+                                            text: I18n.t("guide.autostart.workspace_label", "Workspace")
+                                            font.family: ThemeBackend.fontFamily
+                                            font.pixelSize: rootObj.s(11)
+                                            color: ThemeBackend.subtext0
+                                        }
+
+                                        NumberSelector {
+                                            Layout.fillWidth: true
+                                            implicitHeight: rootObj.s(32)
+                                            from: 0
+                                            to: 10
+                                            stepSize: 1
+                                            decimals: 0
+                                            prefix: "WS "
+                                            specialZeroText: I18n.t("guide.autostart.workspace_default", "Default")
+                                            value: entryCard.entryWorkspace
+                                            baseColor: ThemeBackend.surface0
+                                            accentColor: ThemeBackend.mauve
+                                            buttonColor: ThemeBackend.surface1
+                                            buttonTextColor: ThemeBackend.text
+                                            textColor: ThemeBackend.text
+                                            borderColor: Qt.alpha(ThemeBackend.surface2, 0.5)
+                                            cornerRadius: rootObj.s(6)
+                                            fontFamily: ThemeBackend.fontFamily
+                                            fontPixelSize: rootObj.s(11)
+                                            onTriggered: {
+                                                let rounded = Math.max(0, Math.round(value));
+                                                if (entryCard.entryWorkspace !== rounded) {
+                                                    entryCard.entryWorkspace = rounded;
+                                                    autostartTabRoot.flushEntry(index, "workspace", rounded);
+                                                }
+                                            }
+                                        }
+                                    }
+
                                     // Repeat Interval (Visible only when count > 1)
                                     ColumnLayout {
                                         visible: entryCard.entryCount > 1
@@ -960,56 +1003,15 @@ Item {
                                     }
                                 }
 
-                                // Section 3: Workspace & Window Rules (Hyprland integration)
+                                // Section 3: Options (Silent Launch & Keep-Alive Watchdog)
                                 RowLayout {
                                     Layout.fillWidth: true
-                                    spacing: rootObj.s(12)
-
-                                    // Workspace Selection
-                                    ColumnLayout {
-                                        Layout.fillWidth: true
-                                        spacing: rootObj.s(4)
-
-                                        Text {
-                                            text: I18n.t("guide.autostart.workspace_label", "Workspace")
-                                            font.family: ThemeBackend.fontFamily
-                                            font.pixelSize: rootObj.s(11)
-                                            color: ThemeBackend.subtext0
-                                        }
-
-                                        NumberSelector {
-                                            Layout.fillWidth: true
-                                            implicitHeight: rootObj.s(32)
-                                            from: 0
-                                            to: 10
-                                            stepSize: 1
-                                            decimals: 0
-                                            prefix: "WS "
-                                            specialZeroText: I18n.t("guide.autostart.workspace_default", "Default")
-                                            value: entryCard.entryWorkspace
-                                            baseColor: ThemeBackend.surface0
-                                            accentColor: ThemeBackend.mauve
-                                            buttonColor: ThemeBackend.surface1
-                                            buttonTextColor: ThemeBackend.text
-                                            textColor: ThemeBackend.text
-                                            borderColor: Qt.alpha(ThemeBackend.surface2, 0.5)
-                                            cornerRadius: rootObj.s(6)
-                                            fontFamily: ThemeBackend.fontFamily
-                                            fontPixelSize: rootObj.s(11)
-                                            onTriggered: {
-                                                let rounded = Math.max(0, Math.round(value));
-                                                if (entryCard.entryWorkspace !== rounded) {
-                                                    entryCard.entryWorkspace = rounded;
-                                                    autostartTabRoot.flushEntry(index, "workspace", rounded);
-                                                }
-                                            }
-                                        }
-                                    }
+                                    spacing: rootObj.s(10)
 
                                     // Silent Launch Toggle
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: rootObj.s(48)
+                                        Layout.preferredHeight: rootObj.s(46)
                                         radius: rootObj.s(6)
                                         color: Qt.alpha(ThemeBackend.surface0, 0.4)
                                         border.color: Qt.alpha(ThemeBackend.surface1, 0.4)
@@ -1054,60 +1056,11 @@ Item {
                                             }
                                         }
                                     }
-                                }
-
-                                // Section 4: Launch Condition & Keep-Alive Watchdog
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: rootObj.s(12)
-
-                                    // Condition Selector
-                                    ColumnLayout {
-                                        Layout.fillWidth: true
-                                        spacing: rootObj.s(4)
-
-                                        Text {
-                                            text: I18n.t("guide.autostart.condition_label", "Launch Condition")
-                                            font.family: ThemeBackend.fontFamily
-                                            font.pixelSize: rootObj.s(11)
-                                            color: ThemeBackend.subtext0
-                                        }
-
-                                        Switch {
-                                            Layout.fillWidth: true
-                                            implicitHeight: rootObj.s(32)
-                                            options: [
-                                                I18n.t("guide.autostart.condition_always", "Always"),
-                                                I18n.t("guide.autostart.condition_ac_only", "AC Only"),
-                                                I18n.t("guide.autostart.condition_battery_only", "Battery"),
-                                                I18n.t("guide.autostart.condition_multi_monitor", "Multi-Mon")
-                                            ]
-                                            currentIndex: entryCard.entryCondition === "ac_only" ? 1
-                                                        : (entryCard.entryCondition === "battery_only" ? 2
-                                                        : (entryCard.entryCondition === "multi_monitor" ? 3 : 0))
-                                            accentColor: ThemeBackend.mauve
-                                            baseColor: ThemeBackend.surface0
-                                            textColor: ThemeBackend.subtext0
-                                            activeTextColor: ThemeBackend.crust
-                                            cornerRadius: rootObj.s(6)
-                                            fontPixelSize: rootObj.s(10)
-                                            onToggled: function(idx) {
-                                                let cond = "always";
-                                                if (idx === 1) cond = "ac_only";
-                                                else if (idx === 2) cond = "battery_only";
-                                                else if (idx === 3) cond = "multi_monitor";
-                                                if (entryCard.entryCondition !== cond) {
-                                                    entryCard.entryCondition = cond;
-                                                    autostartTabRoot.flushEntry(index, "condition", cond);
-                                                }
-                                            }
-                                        }
-                                    }
 
                                     // Keep-Alive / Watchdog Toggle
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: rootObj.s(48)
+                                        Layout.preferredHeight: rootObj.s(46)
                                         radius: rootObj.s(6)
                                         color: Qt.alpha(ThemeBackend.surface0, 0.4)
                                         border.color: Qt.alpha(ThemeBackend.surface1, 0.4)
@@ -1149,6 +1102,49 @@ Item {
                                                     entryCard.entryRestart = val;
                                                     autostartTabRoot.flushEntry(index, "restartOnCrash", val);
                                                 }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Section 4: Launch Condition Selector
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: rootObj.s(4)
+
+                                    Text {
+                                        text: I18n.t("guide.autostart.condition_label", "Launch Condition")
+                                        font.family: ThemeBackend.fontFamily
+                                        font.pixelSize: rootObj.s(11)
+                                        color: ThemeBackend.subtext0
+                                    }
+
+                                    Switch {
+                                        Layout.fillWidth: true
+                                        implicitHeight: rootObj.s(32)
+                                        options: [
+                                            I18n.t("guide.autostart.condition_always", "Always"),
+                                            I18n.t("guide.autostart.condition_ac_only", "AC Only"),
+                                            I18n.t("guide.autostart.condition_battery_only", "Battery"),
+                                            I18n.t("guide.autostart.condition_multi_monitor", "Multi-Mon")
+                                        ]
+                                        currentIndex: entryCard.entryCondition === "ac_only" ? 1
+                                                    : (entryCard.entryCondition === "battery_only" ? 2
+                                                    : (entryCard.entryCondition === "multi_monitor" ? 3 : 0))
+                                        accentColor: ThemeBackend.mauve
+                                        baseColor: ThemeBackend.surface0
+                                        textColor: ThemeBackend.subtext0
+                                        activeTextColor: ThemeBackend.crust
+                                        cornerRadius: rootObj.s(6)
+                                        fontPixelSize: rootObj.s(10)
+                                        onToggled: function(idx) {
+                                            let cond = "always";
+                                            if (idx === 1) cond = "ac_only";
+                                            else if (idx === 2) cond = "battery_only";
+                                            else if (idx === 3) cond = "multi_monitor";
+                                            if (entryCard.entryCondition !== cond) {
+                                                entryCard.entryCondition = cond;
+                                                autostartTabRoot.flushEntry(index, "condition", cond);
                                             }
                                         }
                                     }

@@ -43,7 +43,7 @@ fi
 
 _config_ensure_settings
 
-STATUS_DIR="/run/user/${UID:-1000}/serpantinum/autostart"
+STATUS_DIR="${QS_RUN_DIR:-${XDG_RUNTIME_DIR:-/tmp}/serpantinum}/autostart"
 mkdir -p "$STATUS_DIR" 2>/dev/null || true
 
 is_enabled="$(jq -r 'if .autostart and (.autostart.enabled != null) then .autostart.enabled else true end' "$CONFIG_SETTINGS_JSON" 2>/dev/null)"
