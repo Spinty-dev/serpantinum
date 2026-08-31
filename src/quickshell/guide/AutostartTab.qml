@@ -188,10 +188,11 @@ Item {
         logModalStatus = statusObj.status || "idle";
         logModalExitCode = statusObj.exitCode || 0;
 
+        autostartTabRoot.logModalContent = "";
         let logPath = autostartTabRoot.autostartRunDir + "/" + entryId + ".log";
         logReaderProc.targetEntryId = entryId;
         logReaderProc.running = false;
-        logReaderProc.command = ["bash", "-c", "if [ -f '" + logPath + "' ]; then cat '" + logPath + "'; else echo '(No log output captured yet)'; fi"];
+        logReaderProc.command = ["bash", "-c", "if [ -f '" + logPath + "' ]; then tail -n 300 '" + logPath + "'; else echo '(No log output captured yet)'; fi"];
         logReaderProc.running = true;
         logModalVisible = true;
     }
@@ -200,8 +201,9 @@ Item {
         id: logReaderProc
         property string targetEntryId: ""
         stdout: SplitParser {
+            splitMarker: ""
             onRead: data => {
-                autostartTabRoot.logModalContent = data;
+                autostartTabRoot.logModalContent = (autostartTabRoot.logModalContent || "") + data;
             }
         }
     }
@@ -1258,19 +1260,24 @@ Item {
                     clip: true
 
                     Flickable {
+                        id: logFlickable
                         anchors.fill: parent
                         anchors.margins: rootObj.s(10)
                         contentWidth: logText.implicitWidth
                         contentHeight: logText.implicitHeight
                         clip: true
+                        boundsBehavior: Flickable.StopAtBounds
 
-                        Text {
+                        TextEdit {
                             id: logText
+                            width: logFlickable.width
                             text: autostartTabRoot.logModalContent !== "" ? autostartTabRoot.logModalContent : I18n.t("guide.autostart.no_log", "No log output captured yet")
                             font.family: "JetBrainsMono Nerd Font Mono"
                             font.pixelSize: rootObj.s(11)
                             color: autostartTabRoot.logModalStatus === "failed" ? ThemeBackend.red : ThemeBackend.text
-                            wrapMode: Text.NoWrap
+                            wrapMode: TextEdit.Wrap
+                            readOnly: true
+                            selectByMouse: true
                         }
                     }
                 }
